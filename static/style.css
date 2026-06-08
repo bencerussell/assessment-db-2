@@ -1,0 +1,38 @@
+/* ================================================
+   Main stylesheet for the Pizza Website
+   All page styling is controlled from this file
+   ================================================ */
+ 
+/* Base body styling - limits width and centres the page */
+body {
+	font-family: Arial, Helvetica, sans-serif;
+	max-width: 800px;
+	margin: 20px auto;
+}
+ 
+/* Header banner with a warm background colour */
+header {
+	background: #ffe9c6;
+	padding: 12px;
+	border-radius: 8px;
+}
+ 
+/* Navigation bar below the header */
+nav {
+	margin-top: 10px;
+	padding: 10px;
+	background: #f2f2f2;
+	border-radius: 8px;
+}
+/* Space between nav links */
+nav a {
+	margin-right: 12px;
+}
+ 
+/* Footer at the bottom of every page */
+footer {
+	margin-top: 20px;
+	padding: 10px;
+	background: #f2f2f2;
+	border-radius: 8px;
+}

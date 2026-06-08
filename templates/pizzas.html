@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+{% block content %}
+ 
+<h1>Our Pizzas</h1>
+ 
+<!-- Pizza grid - three columns, one card per pizza -->
+<div class="pizza-grid">
+ 
+  {% for pizza in pizzas %}
+  <!-- Individual pizza card -->
+  <div class="pizza-card">
+ 
+	<h3>{{ pizza.name }}</h3>
+ 
+	<!-- Price formatted to 2 decimal places -->
+	<p class="price">${{ "%.2f"|format(pizza.price) }}</p>
+ 
+	<!-- Toppings are hidden until the user hovers over the card -->
+	<div class="hidden-toppings">
+  	<ul class="toppings">
+    	{% for topping in pizza.toppings %}
+      	<li>{{ topping.name }}</li>
+    	{% endfor %}
+  	</ul>
+	</div>
+ 
+	<!-- Link to the detail page for this pizza -->
+	<a href="/pizzas/{{ pizza.id }}">View Pizza</a>
+ 
+  </div>
+  {% endfor %}
+ 
+</div>
+ 
+{% endblock %}

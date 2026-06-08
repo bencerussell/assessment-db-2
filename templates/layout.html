@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+<!-- page title - jinga variable-->
+  <title>Pizza Practice - {{ page_title }}</title>
+<!-- Link to external CSS file -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+{% include "header.html" %}
+{% include "nav.html" %}
+
+  <hr>
+<!-- creates a reusable block - placeholder -->
+  {% block content %}{% endblock %}
+
+  <hr>
+  {% include "footer.html" %}
+</body>
+</html>
