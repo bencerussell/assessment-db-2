@@ -3,46 +3,63 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
-pizza_topping = db.Table(
-    "pizza_topping",
+manufacturer_operator = db.Table(
+    "manufacturer_operator",
     db.Column(
-        "pizza_id", db.Integer,
-        db.ForeignKey("pizza.id"), # Points to Pizza Table
+        "operator_icao", db.String,
+        db.ForeignKey("operator.icao"), 
         primary_key = True
     ),
     db.Column(
-        "topping_id", db.Integer,
-        db.ForeignKey("topping.id"), # Points to Topping Table
+        "manufacturer_id", db.Integer,
+        db.ForeignKey("manufacturer.id"),
         primary_key = True
     ),
 )
 
-class Pizza(db.Model):
-    id = db.Column(db.Integer, primary_key = True)
-    name = db.Column(db.String(80), nullable = False)
-    price = db.Column(db.Float, nullable = False)
+class Operator(db.Model):
+    operator_icao = db.Column(db.String(3), primary_key = True)
+    hub_icao = db.Column(db.String(4), nullable = False)
+    year_founded = db.Column(db.Integer, nullable = False)
+    operator_name = db.Column(db.String(25), nullable = False)
     
-    toppings = db.relationship(
-        "Topping",
-        secondary = pizza_topping,
-        backref = "pizzas"
+    manufacturer = db.relationship(
+        "Manufacturer",
+        secondary = manufacturer_operator,
+        backref = "planes"
     )
     
-class Topping(db.Model):
-    id = db.Column(db.Integer, primary_key = True)
-    name = db.Column(db.String(80), nullable = False)
+class Manufacturer(db.Model):
+    manufacturer_id = db.Column(db.Integer, primary_key = True)
+    manufacturer_name = db.Column(db.String(15), nullable = False)
+
+    operator_icao = db.relationship(
+        "Operator",
+        backref = "Aircraft"
+    )
+
+class Aircraft(db.Model):
+    aircraft_registration = db.Column(db.String(8), primary_key = True)
+    country = db.Column(db.String(3), nullable = False)
+    year_produced = db.Column(db.String(4), nullable = False)
+    aircraft_icao = db.Column(db.String(5), nullable = False)
+
+    operator_icao = db.relationship(
+        "Operator",
+        backref = "Aircraft"
+    )
 
 def create_app():
     app = Flask(__name__)
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///pizza.db"
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///plane.db"
     app.config["SQLALCHEMY_TRACK_URI"] = False
-    app.config["SECRET_KEY"] = "something-goes-here"
+    app.config["SECRET_KEY"] = "DanielPJKersten"
     
     db.init_app(app)
     
     with app.app_context():
         db.create_all()
-        if Pizza.query.count() == 0:    
+        if Aircraft.query.count() == 0:    
             # Create Topping Object
             t_cheese = Topping(name = "Cheese")
             t_tomato = Topping(name = "Tomato Sauce")
