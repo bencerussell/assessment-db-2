@@ -18,7 +18,7 @@ manufacturer_operator = db.Table(
 )
 
 class Operator(db.Model):
-    operator_icao = db.Column(db.String(3), primary_key = True)
+    icao = db.Column(db.String(3), primary_key = True)
     hub_icao = db.Column(db.String(4), nullable = False)
     year_founded = db.Column(db.Integer, nullable = False)
     operator_name = db.Column(db.String(25), nullable = False)
@@ -30,7 +30,7 @@ class Operator(db.Model):
     )
     
 class Manufacturer(db.Model):
-    manufacturer_id = db.Column(db.Integer, primary_key = True)
+    id = db.Column(db.Integer, primary_key = True)
     manufacturer_name = db.Column(db.String(15), nullable = False)
 
     operator_icao = db.relationship(
@@ -39,7 +39,7 @@ class Manufacturer(db.Model):
     )
 
 class Aircraft(db.Model):
-    aircraft_registration = db.Column(db.String(8), primary_key = True)
+    registration = db.Column(db.String(8), primary_key = True)
     country = db.Column(db.String(3), nullable = False)
     year_produced = db.Column(db.String(4), nullable = False)
     aircraft_icao = db.Column(db.String(5), nullable = False)
@@ -59,33 +59,33 @@ def create_app():
     
     with app.app_context():
         db.create_all()
-        if Aircraft.query.count() == 0:    
-            # Create Topping Object
-            t_cheese = Topping(name = "Cheese")
-            t_tomato = Topping(name = "Tomato Sauce")
-            t_pepperoni = Topping(name = "Pepperoni")
-            t_ham = Topping(name = "Ham")
-            t_pineapple = Topping(name = "Pineapple")
-            t_sausage = Topping(name = "Italian Fennel Sausage")
-            t_basil = Topping(name = "Basil")
-            
-            db.session.add_all([t_cheese, t_tomato, t_pepperoni, t_ham, t_pineapple, t_sausage, t_basil])
-            
-            # Create Pizza Object
-            p1 = Pizza(name = "Margherita", price = 11)
-            p2 = Pizza(name = "Hawaiian", price = 12.50)
-            p3 = Pizza(name = "Pepperoni", price = 11.50)
-            p4 = Pizza(name = "Italian Sausage", price = 14)
-            
-            db.session.add_all([p1, p2, p3, p4])
-            
-            # Connect Pizza to Topping
-            p1.toppings.extend([t_tomato, t_cheese, t_basil])
-            p2.toppings.extend([t_tomato, t_cheese, t_ham, t_pineapple])
-            p3.toppings.extend([t_tomato, t_cheese, t_pepperoni])
-            p4.toppings.extend([t_tomato, t_cheese, t_sausage, t_basil])
-            
-            db.session.commit()
+       ## if Aircraft.query.count() == 0:    
+       ##     # Create Topping Object
+       ##     t_cheese = Topping(name = "Cheese")
+       ##     t_tomato = Topping(name = "Tomato Sauce")
+       ##     t_pepperoni = Topping(name = "Pepperoni")
+       ##     t_ham = Topping(name = "Ham")
+       ##     t_pineapple = Topping(name = "Pineapple")
+       ##     t_sausage = Topping(name = "Italian Fennel Sausage")
+       ##     t_basil = Topping(name = "Basil")
+       ##     
+       ##     db.session.add_all([t_cheese, t_tomato, t_pepperoni, t_ham, t_pineapple, t_sausage, t_basil])
+       ##     
+       ##     # Create Pizza Object
+       ##     p1 = Pizza(name = "Margherita", price = 11)
+       ##     p2 = Pizza(name = "Hawaiian", price = 12.50)
+       ##     p3 = Pizza(name = "Pepperoni", price = 11.50)
+       ##     p4 = Pizza(name = "Italian Sausage", price = 14)
+       ##     
+       ##     db.session.add_all([p1, p2, p3, p4])
+       ##     
+       ##     # Connect Pizza to Topping
+       ##     p1.toppings.extend([t_tomato, t_cheese, t_basil])
+       ##     p2.toppings.extend([t_tomato, t_cheese, t_ham, t_pineapple])
+       ##     p3.toppings.extend([t_tomato, t_cheese, t_pepperoni])
+       ##     p4.toppings.extend([t_tomato, t_cheese, t_sausage, t_basil])
+       ##     
+       ##     db.session.commit()
 
     @app.route("/")
     def home():
