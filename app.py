@@ -1,5 +1,6 @@
 from flask import Flask, render_template, abort, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
@@ -64,6 +65,15 @@ def create_app():
     
     with app.app_context():
         db.create_all()
+
+        if not User.query.filter_by(username="admin").first():
+            user = User(
+                username="admin",
+                password=generate_password_hash("password123")
+            )
+            db.session.add(user)
+            db.session.commit()
+            
        ## if Aircraft.query.count() == 0:    
        ##     # Create Topping Object
        ##     t_cheese = Topping(name = "Cheese")
@@ -100,14 +110,38 @@ def create_app():
             greeting = "Hello, Daniel Peter James Kersten (the one born on May 5th 2009)! I've been expecting you... have you done your calculus homework?"
             )
         
-    @app.route("/pizzas")
-    def pizzas_page():
-        pizzas = Pizza.query.order_by(Pizza.name.asc()).all()
+    @app.route("/about-us")
+    def about_us():
         return render_template(
-            "pizzas.html",
-            page_title = "Pizzas",
-            pizzas = pizzas
+            "about-us.html",
+            page_title = "About Us",
             )
+    
+    @app.route("/login", methods=["GET", "POST"])
+    def login():
+        error = None
+
+        if request.method == "POST":
+            username = request.form["username"]
+            password = request.form["password"]
+
+            user = User.query.filter_by(username=username).first()
+
+            if user and check_password_hash(user.password, password):
+                session["user"] = username
+            else:
+                error = "Invalid username or password."
+
+        return render_template(
+            "login.html",
+            page_title = "Login",
+        )
+    
+    @app.route("/logout")
+    def logout():
+        session.pop("user", None)
+        
+        return redirect(url_for("home"))
         
     @app.route("/pizzas/<int:pizza_id>")
     def pizza_detail(pizza_id):
