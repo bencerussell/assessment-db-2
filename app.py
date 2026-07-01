@@ -21,7 +21,7 @@ manufacturer_operator = db.Table(
 class User(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     username = db.Column(db.String(20), unique = True, nullable = False)
-    password = db.Column(db.String(50), nullable = False)
+    password = db.Column(db.String(100), nullable = False)
 
 class Operator(db.Model):
     icao = db.Column(db.String(3), primary_key = True)
@@ -29,19 +29,24 @@ class Operator(db.Model):
     year_founded = db.Column(db.Integer, nullable = False)
     operator_name = db.Column(db.String(25), nullable = False)
     
-    manufacturer = db.relationship(
+    manufacturers = db.relationship(
         "Manufacturer",
         secondary = manufacturer_operator,
-        backref = "planes"
+        back_populates = "operators"
+    )
+    aircrafts = db.relationship(
+        "Aircraft",
+        back_populates = "operator"
     )
     
 class Manufacturer(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     manufacturer_name = db.Column(db.String(15), nullable = False)
 
-    operator_icao = db.relationship(
+    operators = db.relationship(
         "Operator",
-        backref = "Aircraft"
+        secondary = manufacturer_operator,
+        back_populates = "manufacturers"
     )
 
 class Aircraft(db.Model):
@@ -49,16 +54,17 @@ class Aircraft(db.Model):
     country = db.Column(db.String(3), nullable = False)
     year_produced = db.Column(db.String(4), nullable = False)
     aircraft_icao = db.Column(db.String(5), nullable = False)
+    operator_id = db.Column(db.String(3), db.ForeignKey("operator.icao"), nullable=False)
 
-    operator_icao = db.relationship(
+    operator = db.relationship(
         "Operator",
-        backref = "Aircraft"
+        back_populates = "aircrafts"
     )
 
 def create_app():
     app = Flask(__name__)
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///plane.db"
-    app.config["SQLALCHEMY_TRACK_URI"] = False
+    app.config["SQLALCHEMY_TRACK_MODIFICTIONS"] = False
     app.config["SECRET_KEY"] = "DanielPJKersten"
     
     db.init_app(app)
@@ -127,8 +133,14 @@ def create_app():
 
             user = User.query.filter_by(username=username).first()
 
+            next_page = request.args.get("next")
+
             if user and check_password_hash(user.password, password):
                 session["user"] = username
+                if not next_page:
+                    next_page = url_for("home")
+
+                return redirect(next_page)
             else:
                 error = "Invalid username or password."
 
@@ -137,22 +149,42 @@ def create_app():
             page_title = "Login",
         )
     
+    @app.route("/profile")
+    def profile():
+        if "user" in session:
+            return render_template(
+                "profile.html",
+                page_title = "Profile",
+            )
+        else:
+            return redirect(url_for("login"))
+        
+    @app.route("/database")
+    def database():
+        if "user" in session:
+            return render_template(
+                "database.html",
+                page_title = "Database",
+            )
+        else:
+            return redirect(url_for("login", next=request.url))
+    
     @app.route("/logout")
     def logout():
         session.pop("user", None)
         
         return redirect(url_for("home"))
         
-    @app.route("/pizzas/<int:pizza_id>")
-    def pizza_detail(pizza_id):
-        pizza = Pizza.query.get(pizza_id)
-        if pizza is None:
-            abort(404)
-        return render_template(
-            "pizza_detail.html", 
-            page_title="pizza.name", 
-            pizza=pizza
-            )   
+   # @app.route("/pizzas/<int:pizza_id>")
+   # def pizza_detail(pizza_id):
+   #     pizza = Pizza.query.get(pizza_id)
+   #     if pizza is None:
+   #         abort(404)
+   #     return render_template(
+   #         "pizza_detail.html", 
+   #         page_title="pizza.name", 
+   #         pizza=pizza
+   #         )   
 
     return app
         

@@ -3,30 +3,47 @@
    All page styling is controlled from this file
    ================================================ */
  
+html {
+	height:100%;
+}
+
 /* Base body styling - limits width and centres the page */
 body {
 	font-family: Arial, Helvetica, sans-serif;
 	max-width: 800px;
 	margin: 20px auto;
+	background-image: linear-gradient(to bottom, #6ca8be, #001b42);
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+	text-align:center;
 }
  
 /* Header banner with a warm background colour */
 header {
-	background: #ffe9c6;
 	padding: 12px;
 	border-radius: 8px;
+	color:#ffffff;
+	background-image: url('homepage.png');
+	background-position: center;
+	background-size: contain;
+	background-repeat: no-repeat;
 }
 
 /* Navigation bar below the header */
 nav {
-	margin-top: 10px;
-	padding: 10px;
-	background: #f2f2f2;
-	border-radius: 8px;
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
 }
-/* Space between nav links */
+
 nav a {
-	margin-right: 12px;
+    margin-right: 12px;
+}
+
+.login-link {
+    margin-left: auto;
 }
  
 /* Footer at the bottom of every page */
