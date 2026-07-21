@@ -1,7 +1,11 @@
 <nav>
-  <a href="/">Home</a>
-  <a href="/profile">Profile</a>
-  <a href="/database">Database</a>
-  <a href="/about-us">About Us</a>
-  <a href="/login" class="login-link">Login</a>
+  <button style="margin-inline:2px" type="button" onclick="window.location.href='/'">Home</button>
+  <button style="margin-inline:2px" type="button" onclick="window.location.href='/dashboard'">Dashboard</button>
+  <button style="margin-inline:2px" type="button" onclick="window.location.href='/about-us'">About Us</button>
+
+  {% if logged_in %}
+    <button style="margin-inline:2px; margin-inline-start:auto;"  class="login-link" type="button" onclick="window.location.href='/profile'">Profile</button>
+  {% else %}
+    <button style="margin-inline:2px; margin-inline-start:auto;"  class="login-link" type="button" onclick="window.location.href='/login'">Login</button>
+  {% endif %}
 </nav>

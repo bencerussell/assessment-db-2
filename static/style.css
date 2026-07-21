@@ -3,13 +3,15 @@
    All page styling is controlled from this file
    ================================================ */
  
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+
 html {
 	height:100%;
 }
 
 /* Base body styling - limits width and centres the page */
 body {
-	font-family: Arial, Helvetica, sans-serif;
+	font-family: 'Noto Sans', sans-serif;
 	max-width: 800px;
 	margin: 20px auto;
 	background-image: linear-gradient(to bottom, #6ca8be, #001b42);
@@ -41,15 +43,24 @@ nav {
 nav a {
     margin-right: 12px;
 }
-
-.login-link {
-    margin-left: auto;
-}
  
 /* Footer at the bottom of every page */
 footer {
 	margin-top: 20px;
 	padding: 10px;
-	background: #f2f2f2;
 	border-radius: 8px;
+}
+
+input {
+	padding: 2px;
+	border-radius: 5px;
+	margin-bottom: 4px;
+}
+
+button {
+	padding:2px;
+	border-radius: 5px;
+	padding-left: 5px;
+	padding-right: 5px;
+	font-family: 'Noto Sans', sans-serif;
 }

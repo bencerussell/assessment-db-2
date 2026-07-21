@@ -1,7 +1,11 @@
 {% extends "layout.html" %}
 
 {% block title %}
+{% if create_account %}
+Create Account
+{% else %}
 Login
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -17,17 +21,19 @@ Login
     <input
         type = "text"
         name = "username"
-        placeholder = "Username"
-        required>
+        placeholder = "Username">
 
     <input
         type = "password"
         name = "password"
-        placeholder = "Password"
-        required>
-
-    <button type="submit">
+        placeholder = "Password">
+    <br>
+    <button type="submit" name="action" value="login">
         Login
+    </button>
+    <br>
+    <button type="submit" name="action" value="create" style="margin-top: 3px;">
+        Create Account
     </button>
 </form>
 

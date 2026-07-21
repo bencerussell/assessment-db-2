@@ -126,27 +126,35 @@ def create_app():
     @app.route("/login", methods=["GET", "POST"])
     def login():
         error = None
+        create_account = False
 
         if request.method == "POST":
-            username = request.form["username"]
-            password = request.form["password"]
+            action = request.form["action"]
 
-            user = User.query.filter_by(username=username).first()
+            if action == "create":
+                create_account = True
+            elif action == "login":
+                username = request.form["username"]
+                password = request.form["password"]
 
-            next_page = request.args.get("next")
+                user = User.query.filter_by(username=username).first()
 
-            if user and check_password_hash(user.password, password):
-                session["user"] = username
-                if not next_page:
-                    next_page = url_for("home")
+                next_page = request.args.get("next")
 
-                return redirect(next_page)
-            else:
-                error = "Invalid username or password."
+                if user and check_password_hash(user.password, password):
+                    session["user"] = username
+                    if not next_page:
+                        next_page = url_for("home")
+
+                    return redirect(next_page)
+                else:
+                    error = "Invalid username or password."
 
         return render_template(
             "login.html",
             page_title = "Login",
+            error=error,
+            create_account=create_account
         )
     
     @app.route("/profile")
@@ -172,7 +180,6 @@ def create_app():
     @app.route("/logout")
     def logout():
         session.pop("user", None)
-        
         return redirect(url_for("home"))
         
    # @app.route("/pizzas/<int:pizza_id>")
@@ -189,6 +196,12 @@ def create_app():
     return app
         
 app = create_app()
+
+@app.context_processor
+def inject_user():
+   return{
+       "logged_in": "user" in session   
+   }
 
 if __name__ == "__main__":
     app.run(debug = True, host = "127.0.0.1", port = 5000)
