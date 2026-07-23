@@ -1,20 +1,51 @@
 {% extends "layout.html" %}
 
 {% block title %}
-{% if create_account %}
-Create Account
-{% else %}
+
 Login
-{% endif %}
+
 {% endblock %}
 
 {% block content %}
 
+{% if create_account %}
+<h2>Create Account</h2>
+{% else %}
 <h2>Login</h2>
+{% endif %}
 
 {% if error %}
 <p class="error">{{ error }}</p>
 {% endif %}
+
+{% if create_account %}
+<form method="POST">
+
+    <input
+        type = "email"
+        name = "email"
+        placeholder = "Email">
+
+    <input
+        type = "text"
+        name = "username"
+        placeholder = "Username">
+    <br>
+    <input
+        type = "password"
+        name = "password"
+        placeholder = "Password">
+    <input
+        type = "password"
+        name = "confirm_password"
+        placeholder = "Confirm Password">
+    <br>
+    <button type="submit" name="action" value="actualcreate" style="margin-top: 3px;">
+        Create Account
+    </button>
+</form>
+
+{% else %}
 
 <form method="POST">
 
@@ -36,5 +67,6 @@ Login
         Create Account
     </button>
 </form>
+{% endif %}
 
 {% endblock %}

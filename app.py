@@ -22,6 +22,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     username = db.Column(db.String(20), unique = True, nullable = False)
     password = db.Column(db.String(100), nullable = False)
+    email = db.Column(db.String(254), nullable = False, unique = True)
 
 class Operator(db.Model):
     icao = db.Column(db.String(3), primary_key = True)
@@ -75,6 +76,7 @@ def create_app():
         if not User.query.filter_by(username="admin").first():
             user = User(
                 username="admin",
+                email="bencerussell@garincollege.nz",
                 password=generate_password_hash("password123")
             )
             db.session.add(user)
@@ -133,6 +135,39 @@ def create_app():
 
             if action == "create":
                 create_account = True
+            elif action == "actualcreate":
+                create_account = True
+
+                username = request.form["username"]
+                password = request.form["password"]
+                email = request.form["email"]
+                confirmpassword = request.form["confirm_password"]
+
+                if password != confirmpassword:
+                    error = "Passwords do not match."
+                elif User.query.filter_by(username=username).first():
+                    error = "Username already exists."
+                elif User.query.filter_by(email=email).first():
+                    error = "Email already in use."
+                else:
+                    new_user = User(
+                        username=username,
+                        email=email,
+                        password=generate_password_hash(password)
+                    )
+
+                    db.session.add(new_user)
+                    db.session.commit()
+
+                    session["user"] = username
+                    
+                    next_page = request.args.get("next")
+
+                    if not next_page:
+                        next_page = url_for("home")
+
+                    return redirect(next_page)
+
             elif action == "login":
                 username = request.form["username"]
                 password = request.form["password"]
@@ -163,6 +198,8 @@ def create_app():
             return render_template(
                 "profile.html",
                 page_title = "Profile",
+                user = session["user"],
+                email = user.email if (user := User.query.filter_by(username=session["user"]).first()) else None
             )
         else:
             return redirect(url_for("login"))
