@@ -213,6 +213,17 @@ def create_app():
             )
         else:
             return redirect(url_for("login", next=request.url))
+
+    @app.route("/dashboard")
+    def dashboard():
+        if "user" in session:
+            return render_template(
+                "dashboard.html",
+                page_title = "Dashboard",
+                user = session["user"]
+            )
+        else:
+            return redirect(url_for("login", next=request.url))
     
     @app.route("/logout")
     def logout():
