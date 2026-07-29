@@ -53,7 +53,7 @@ class Manufacturer(db.Model):
 class Aircraft(db.Model):
     registration = db.Column(db.String(8), primary_key = True)
     country = db.Column(db.String(3), nullable = False)
-    year_produced = db.Column(db.String(4), nullable = False)
+    year_produced = db.Column(db.String(4), nullable = True)
     aircraft_icao = db.Column(db.String(5), nullable = False)
     operator_id = db.Column(db.String(3), db.ForeignKey("operator.icao"), nullable=False)
 
@@ -81,7 +81,18 @@ def create_app():
             )
             db.session.add(user)
             db.session.commit()
-            
+
+        if Operator.query.count() == 0:
+            op1 = Operator(icao="AAL", hub_icao="KDFW", year_founded=1930, operator_name="American Airlines")
+            op2 = Operator(icao="DAL", hub_icao="KATL", year_founded=1924, operator_name="Delta Airlines")
+            op3 = Operator(icao="UAL", hub_icao="KORD", year_founded=1926, operator_name="United Airlines")
+            op4 = Operator(icao="SWA", hub_icao="KDAL", year_founded=1967, operator_name="Southwest Airlines")
+            op5 = Operator(icao="NIL", hub_icao="N/A", year_founded=0, operator_name="Privately Owned")
+
+            db.session.add_all([op1, op2, op3, op4, op5])
+            db.session.commit()
+
+        
        ## if Aircraft.query.count() == 0:    
        ##     # Create Topping Object
        ##     t_cheese = Topping(name = "Cheese")
@@ -221,6 +232,47 @@ def create_app():
                 "dashboard.html",
                 page_title = "Dashboard",
                 user = session["user"]
+            )
+        else:
+            return redirect(url_for("login", next=request.url))
+
+    @app.route("/db-add", methods=["GET", "POST"])
+    def db_add():
+        type = None
+        operators = Operator.query.order_by(Operator.operator_name).all()
+        if "user" in session:
+            if request.method == "POST":
+                action = request.form["action"]
+
+                if action == "aircraft":
+                    type="aircraft"
+                elif action == "operator":
+                    type="operator"
+                elif action == "submit_aircraft":
+                    registration = request.form["registration"]
+                    country = request.form["country"]
+                    year_produced = request.form["year_produced"]
+                    aircraft_icao = request.form["icao"]
+                    operator_id = request.form["operator_id"]
+
+                    new_aircraft = Aircraft(
+                        registration=registration,
+                        country=country,
+                        year_produced=year_produced,
+                        aircraft_icao=aircraft_icao,
+                        operator_id=operator_id
+                    )
+
+                    db.session.add(new_aircraft)
+                    db.session.commit()
+
+                    return redirect(url_for("dashboard"))
+            
+            return render_template(
+                "db-add.html",
+                page_title = "Add to the Database",
+                type=type,
+                operators=operators
             )
         else:
             return redirect(url_for("login", next=request.url))
