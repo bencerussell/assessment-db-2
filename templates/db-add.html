@@ -18,10 +18,13 @@
         name = "registration"
         placeholder = "Aircraft Registration">
 
-    <input required
-        type = "text"
-        name = "country"
-        placeholder = "Country of Registration">
+   <select name="prefix">
+        {% for regprefix in prefixes %}
+            <option value="{{ regprefix.prefix }}">
+                {{ country.country_name }} ({{ country.code }})
+            </option>
+        {% endfor %}
+    </select>
 <br>
     <input
         type = "text"
