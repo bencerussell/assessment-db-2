@@ -16,7 +16,7 @@
    <select name="prefix">
         {% for regprefix in prefixes %}
             <option value="{{ regprefix.prefix }}">
-                {{ regprefix.country_name }} ({{ regprefix.prefix }})
+                {{ regprefix.prefix }}-
             </option>
         {% endfor %}
     </select>
@@ -24,12 +24,12 @@
     <input required
         type = "text"
         name = "registration"
-        placeholder = "Aircraft Registration (without prefix)">
+        placeholder = "Registration (e.g. N115MF)">
 <br>
     <input
         type = "text"
         name = "year_produced"
-        placeholder = "Year of Production">
+        placeholder = "Year of Production (optional)">
 
     <input required
         type = "text"
@@ -47,43 +47,31 @@
     <button style="margin-inline:2px; margin-top:4px" type="submit" name="action" value="submit_aircraft">Submit</button>
 </form>
 
-{% elseif %}
+{% elif type == 'operator' %}
 
 <h2>Add an Operator</h2>
 
 <form method="POST">
-   <select name="prefix">
-        {% for regprefix in prefixes %}
-            <option value="{{ regprefix.prefix }}">
-                {{ regprefix.country_name }} ({{ regprefix.prefix }})
-            </option>
-        {% endfor %}
-    </select>
-
+   <input
+        type = "text"
+        name = "icao"
+        placeholder = "ICAO Code (e.g. ANZ)">
     <input required
         type = "text"
-        name = "registration"
-        placeholder = "Aircraft Registration (without prefix)">
+        name = "hub"
+        placeholder = "Primary Hub (e.g. NZAA)">
 <br>
     <input
         type = "text"
-        name = "year_produced"
-        placeholder = "Year of Production">
+        name = "year"
+        placeholder = "Year Founded">
 
     <input required
         type = "text"
-        name = "icao"
-        placeholder = "ICAO Type Designator">
-    <br>
-    <select name="operator_id">
-        {% for operator in operators %}
-            <option value="{{ operator.icao }}">
-                {{ operator.operator_name }} ({{ operator.icao }})
-            </option>
-        {% endfor %}
-    </select>
+        name = "name"
+        placeholder = "Operator Name">
 <br>
-    <button style="margin-inline:2px; margin-top:4px" type="submit" name="action" value="submit_aircraft">Submit</button>
+    <button style="margin-inline:2px; margin-top:4px" type="submit" name="action" value="submit_operator">Submit</button>
 </form>
 
 {% endif %}

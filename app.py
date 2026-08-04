@@ -1,6 +1,7 @@
 from flask import Flask, render_template, abort, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+import csv
 
 db = SQLAlchemy()
 
@@ -51,11 +52,20 @@ class Manufacturer(db.Model):
     )
 
 class Aircraft(db.Model):
-    registration = db.Column(db.String(10), primary_key = True)
+    id = db.Column(db.Integer, primary_key = True)
+    registration = db.Column(db.String(10), nullable = False)
     year_produced = db.Column(db.String(4), nullable = True)
     aircraft_icao = db.Column(db.String(5), nullable = False)
     operator_id = db.Column(db.String(3), db.ForeignKey("operator.icao"), nullable=False)
     registration_prefix = db.Column(db.String(5), db.ForeignKey("registration_prefix.prefix"), nullable=False)
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "registration_prefix",
+            "registration",
+            name = "unique_registration"
+        ),
+    )
 
     operator = db.relationship(
         "Operator",
@@ -90,6 +100,20 @@ def create_app():
     with app.app_context():
         db.create_all()
 
+        if RegistrationPrefix.query.count() == 0:
+            with open('registration_prefixes.csv', newline="", encoding="utf-8") as file:
+                reader = csv.DictReader(file)
+
+                for row in reader:
+                    prefix = RegistrationPrefix(
+                        prefix = row["prefix"],
+                        country_name = row["country_name"],
+                        country_id = row["country_id"]
+                    )
+                    db.session.add(prefix)
+
+            db.session.commit()
+
         if not User.query.filter_by(username="admin").first():
             user = User(
                 username="admin",
@@ -99,13 +123,14 @@ def create_app():
             db.session.add(user)
             db.session.commit()
 
-        if Operator.query.count() == 5:
+        if Operator.query.count() == 0:
             op1 = Operator(icao="ANZ", hub_icao="NZAA", year_founded=1940, operator_name="Air New Zealand")
             op2 = Operator(icao="VOZ", hub_icao="YBBN", year_founded=2000, operator_name="Virgin Australia")
             op3 = Operator(icao="QFA", hub_icao="YSSY", year_founded=1920, operator_name="Qantas")
             op4 = Operator(icao="BAW", hub_icao="EGLL", year_founded=1974, operator_name="British Airways")
+            op5 = Operator(icao="NIL", hub_icao="NONE", year_founded=0, operator_name="Privately Owned")
 
-            db.session.add_all([op1, op2, op3, op4])
+            db.session.add_all([op1, op2, op3, op4, op5])
             db.session.commit()
 
        ## if Aircraft.query.count() == 0:    
@@ -229,16 +254,6 @@ def create_app():
             )
         else:
             return redirect(url_for("login"))
-        
-    @app.route("/database")
-    def database():
-        if "user" in session:
-            return render_template(
-                "database.html",
-                page_title = "Database",
-            )
-        else:
-            return redirect(url_for("login", next=request.url))
 
     @app.route("/dashboard")
     def dashboard():
@@ -265,24 +280,61 @@ def create_app():
                 elif action == "operator":
                     type="operator"
                 elif action == "submit_aircraft":
-                    registration = request.form["registration"]
+                    try:
+                        year_produced = int(request.form["year_produced"])
+                    except ValueError:
+                        return redirect(url_for("db_add")) #make this return to the relevant page 
+                    registration = request.form["registration"].upper()
                     prefix = request.form["prefix"]
-                    year_produced = request.form["year_produced"]
-                    aircraft_icao = request.form["icao"]
+                    aircraft_icao = request.form["icao"].upper()
                     operator_id = request.form["operator_id"]
+                    
+                    if Aircraft.query.filter_by(registration=registration, registration_prefix=prefix).first():
+                        error = "Operator with this ICAO code already exists."
+                        return render_template(
+                            "db-add.html",
+                            page_title = "Add to the Database",
+                            type=type,
+                            operators=operators,
+                            prefixes=prefixes,
+                            error=error
+                        )
 
-                    new_aircraft = Aircraft(
-                        registration=registration,
-                        registration_prefix=prefix,
-                        year_produced=year_produced,
-                        aircraft_icao=aircraft_icao,
-                        operator_id=operator_id
-                    )
+                    else:
+                        new_aircraft = Aircraft(
+                            registration=registration,
+                            registration_prefix=prefix,
+                            year_produced=year_produced,
+                            aircraft_icao=aircraft_icao,
+                            operator_id=operator_id
+                        )
 
                     db.session.add(new_aircraft)
                     db.session.commit()
 
                     return redirect(url_for("dashboard"))
+                elif action == "submit_operator":
+                    try:
+                        year_founded = int(request.form["year"])
+                    except ValueError:
+                        return redirect(url_for("db_add")) #make this return to the relevant page 
+                    icao = request.form["icao"].upper()
+                    hub_icao = request.form["hub"].upper()
+                    operator_name = request.form["name"].title()
+
+                    if Operator.query.filter_by(icao=icao).first():
+                        error = "Operator with this ICAO code already exists."
+
+                    else:
+                        new_operator = Operator(
+                            icao=icao,
+                            hub_icao=hub_icao,
+                            year_founded=year_founded,
+                            operator_name=operator_name
+                        )
+                        db.session.add(new_operator)
+                        db.session.commit()
+                        return redirect(url_for("dashboard"))
             
             return render_template(
                 "db-add.html",
@@ -293,6 +345,17 @@ def create_app():
             )
         else:
             return redirect(url_for("login", next=request.url))
+
+    @app.route("/database")
+    def databass():
+        if "user" in session:
+            return render_template(
+                "database.html",
+                page_title = "Database",
+                user=session["user"]
+            )
+        else:
+            return redirect(url_for("login"))
     
     @app.route("/logout")
     def logout():
