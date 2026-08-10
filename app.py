@@ -133,34 +133,6 @@ def create_app():
             db.session.add_all([op1, op2, op3, op4, op5])
             db.session.commit()
 
-       ## if Aircraft.query.count() == 0:    
-       ##     # Create Topping Object
-       ##     t_cheese = Topping(name = "Cheese")
-       ##     t_tomato = Topping(name = "Tomato Sauce")
-       ##     t_pepperoni = Topping(name = "Pepperoni")
-       ##     t_ham = Topping(name = "Ham")
-       ##     t_pineapple = Topping(name = "Pineapple")
-       ##     t_sausage = Topping(name = "Italian Fennel Sausage")
-       ##     t_basil = Topping(name = "Basil")
-       ##     
-       ##     db.session.add_all([t_cheese, t_tomato, t_pepperoni, t_ham, t_pineapple, t_sausage, t_basil])
-       ##     
-       ##     # Create Pizza Object
-       ##     p1 = Pizza(name = "Margherita", price = 11)
-       ##     p2 = Pizza(name = "Hawaiian", price = 12.50)
-       ##     p3 = Pizza(name = "Pepperoni", price = 11.50)
-       ##     p4 = Pizza(name = "Italian Sausage", price = 14)
-       ##     
-       ##     db.session.add_all([p1, p2, p3, p4])
-       ##     
-       ##     # Connect Pizza to Topping
-       ##     p1.toppings.extend([t_tomato, t_cheese, t_basil])
-       ##     p2.toppings.extend([t_tomato, t_cheese, t_ham, t_pineapple])
-       ##     p3.toppings.extend([t_tomato, t_cheese, t_pepperoni])
-       ##     p4.toppings.extend([t_tomato, t_cheese, t_sausage, t_basil])
-       ##     
-       ##     db.session.commit()
-
     @app.route("/")
     def home():
         return render_template(
@@ -280,17 +252,22 @@ def create_app():
                 elif action == "operator":
                     type="operator"
                 elif action == "submit_aircraft":
-                    try:
-                        year_produced = int(request.form["year_produced"])
-                    except ValueError:
-                        return redirect(url_for("db_add")) #make this return to the relevant page 
+                    year_produced = request.form["year_produced"]
+                    if year_produced:
+                        try:
+                            year_test = int(request.form["year_produced"])
+                        except ValueError:
+                            return redirect(url_for("db_add")) #make this return to the relevant page 
+                    else:
+                        year_test = year_produced
                     registration = request.form["registration"].upper()
                     prefix = request.form["prefix"]
                     aircraft_icao = request.form["icao"].upper()
                     operator_id = request.form["operator_id"]
                     
                     if Aircraft.query.filter_by(registration=registration, registration_prefix=prefix).first():
-                        error = "Operator with this ICAO code already exists."
+                        print("icao code")
+                        error = "Aircraft with this registration already exists."
                         return render_template(
                             "db-add.html",
                             page_title = "Add to the Database",
@@ -304,7 +281,7 @@ def create_app():
                         new_aircraft = Aircraft(
                             registration=registration,
                             registration_prefix=prefix,
-                            year_produced=year_produced,
+                            year_produced=year_test,
                             aircraft_icao=aircraft_icao,
                             operator_id=operator_id
                         )
@@ -356,23 +333,51 @@ def create_app():
             )
         else:
             return redirect(url_for("login"))
+
+    @app.route("/database/aircraft")
+    def dbaircraft():
+        aircraft = Aircraft.query.order_by(Aircraft.operator_id).all()
+        if "user" in session:
+            return render_template(
+                "aircraft.html",
+                page_title = "Database (Aircraft)",
+                user=session["user"],
+                aircrafts=aircraft
+            )
+        else:
+            return redirect(url_for("login"))
+
+    @app.route("/database/operators")
+    def dboperator():
+        operators = Operator.query.order_by(Operator.operator_name).all()
+        if "user" in session:
+            return render_template(
+                "operators.html",
+                page_title = "Database (Operators)",
+                user=session["user"],
+                operators=operators
+            )
+        else:
+            return redirect(url_for("login"))
+
+    @app.route("/database/manufacturers")
+    def manufacturer():
+        manufacturers = Manufacturer.query.order_by(Manufacturer.manufacturer_name).all()
+        if "user" in session:
+            return render_template(
+                "manufacturers.html",
+                page_title = "Database (Manufacturers)",
+                user=session["user"],
+                manufacturers=manufacturers
+            )
+        else:
+            return redirect(url_for("login"))
     
     @app.route("/logout")
     def logout():
         session.pop("user", None)
         return redirect(url_for("home"))
         
-   # @app.route("/pizzas/<int:pizza_id>")
-   # def pizza_detail(pizza_id):
-   #     pizza = Pizza.query.get(pizza_id)
-   #     if pizza is None:
-   #         abort(404)
-   #     return render_template(
-   #         "pizza_detail.html", 
-   #         page_title="pizza.name", 
-   #         pizza=pizza
-   #         )   
-
     return app
         
 app = create_app()

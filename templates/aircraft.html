@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h2 style="color: #ffffff;">Hello {{user}}!</h2>
+
+<ul>
+     <table style="width: 100%; color:#ffffff;">
+        <tr>
+            <th>Registration</th>
+            <th>Aircraft Type</th>
+            <th>Operator</th>
+            <th>Production Year</th>
+        </tr>
+        {% for aircraft in aircrafts %}
+        <tr>
+            <td>{{aircraft.registration_prefix}}-{{aircraft.registration}}</td>
+            <td>{{aircraft.aircraft_icao}}</td>
+            <td>{{aircraft.operator.operator_name}}</td>
+            <td>
+                {% if aircraft.year_produced %}
+                {{aircraft.year_produced}}
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</ul>
+
+{% endblock %} 
+
