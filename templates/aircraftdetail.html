@@ -1,8 +1,6 @@
 {% extends "layout.html" %}
 {% block content %}
 
-<h2 style="color: #ffffff;">Hello {{user}}!</h2>
-
 <table style="width: 100%; color:#ffffff;">
     <tr>
         <th>Registration</th>
@@ -13,7 +11,7 @@
     {% for aircraft in aircrafts %}
     <tr>
         <td><a href="/database/aircraft/{{ aircraft.id }}">{{aircraft.registration_prefix}}-{{aircraft.registration}}</a></td>
-        <td>{{aircraft.manufacturer_icao}}</td>
+        <td>{{aircraft.aircraft_icao}}</td>
         <td>{{aircraft.operator.operator_name}}</td>
         <td>
             {% if aircraft.year_produced %}
@@ -25,4 +23,3 @@
 </table>
 
 {% endblock %} 
-

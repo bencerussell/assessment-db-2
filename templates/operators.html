@@ -3,23 +3,23 @@
 
 <h2 style="color: #ffffff;">Hello {{user}}!</h2>
 
-<ul>
-     <table style="width: 100%; color:#ffffff;">
-        <tr>
-            <th>Name</th>
-            <th>ICAO Code</th>
-            <th>Hub Airport</th>
-            <th>Year Founded</th>
-        </tr>
-        {% for operator in operators %}
-        <tr>
-            <td>{{operator.operator_name}}</td>
-            <td>{{operator.icao}}</td>
-            <td>{{operator.hub_icao}}</td>
-            <td>{{operator.year_founded}}</td>
-        </tr>
-        {% endfor %}
-    </table>
-</ul>
+
+<table style="width: 100%; color:#ffffff;">
+    <tr>
+        <th>Name</th>
+        <th>ICAO Code</th>
+        <th>Hub Airport</th>
+        <th>Year Founded</th>
+    </tr>
+    {% for operator in operators %}
+    <tr>
+        <td>{{operator.operator_name}}</td>
+        <td>{{operator.icao}}</td>
+        <td>{{operator.hub_icao}}</td>
+        <td>{{operator.year_founded}}</td>
+    </tr>
+    {% endfor %}
+</table>
+
 
 {% endblock %} 

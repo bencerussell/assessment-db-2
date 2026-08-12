@@ -3,18 +3,16 @@
 
 <h2 style="color: #ffffff;">Hello {{user}}!</h2>
 
-<ul>
-     <table style="width: 100%; color:#ffffff;">
-        <tr>
-            <th>Manufacturer Name</th>
-        </tr>
-        {% for manufacturer in manufacturers %}
-        <tr>
-            <td>{{manufacturer.manufacturer_name}}
-        </tr>
-        {% endfor %}
-    </table>
-</ul>
+<table style="width: 100%; color:#ffffff;">
+    <tr>
+        <th>Manufacturer Name</th>
+    </tr>
+    {% for manufacturer in manufacturers %}
+    <tr>
+        <td><a href="/manufacturers/{{ manufacturer_id }}">{{manufacturer.manufacturer_name}}</a></td>
+    </tr>
+    {% endfor %}
+</table>
 
 {% endblock %} 
 

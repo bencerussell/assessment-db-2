@@ -14,7 +14,7 @@ manufacturer_operator = db.Table(
     ),
     db.Column(
         "manufacturer_id", db.Integer,
-        db.ForeignKey("manufacturer.id"),
+        db.ForeignKey("manufacturer.type_icao"),
         primary_key = True
     ),
 )
@@ -42,7 +42,7 @@ class Operator(db.Model):
     )
     
 class Manufacturer(db.Model):
-    id = db.Column(db.Integer, primary_key = True)
+    type_icao = db.Column(db.String(4), primary_key = True)
     manufacturer_name = db.Column(db.String(15), nullable = False)
 
     operators = db.relationship(
@@ -51,13 +51,18 @@ class Manufacturer(db.Model):
         back_populates = "manufacturers"
     )
 
+    aircrafts = db.relationship(
+            "Aircraft",
+            back_populates = "manufacturer"
+        )
+
 class Aircraft(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     registration = db.Column(db.String(10), nullable = False)
-    year_produced = db.Column(db.String(4), nullable = True)
-    aircraft_icao = db.Column(db.String(5), nullable = False)
+    year_produced = db.Column(db.Integer, nullable = True)
     operator_id = db.Column(db.String(3), db.ForeignKey("operator.icao"), nullable=False)
     registration_prefix = db.Column(db.String(5), db.ForeignKey("registration_prefix.prefix"), nullable=False)
+    manufacturer_icao = db.Column(db.Integer, db.ForeignKey("manufacturer.type_icao"), nullable=False)
 
     __table_args__ = (
         db.UniqueConstraint(
@@ -74,7 +79,12 @@ class Aircraft(db.Model):
 
     prefix = db.relationship(
         "RegistrationPrefix",
-        back_populates = "aircraft"
+        back_populates = "aircrafts"
+    )
+
+    manufacturer = db.relationship(
+        "Manufacturer",
+        back_populates = "aircrafts"
     )
 
 class RegistrationPrefix(db.Model):
@@ -84,7 +94,7 @@ class RegistrationPrefix(db.Model):
     country_name = db.Column(db.String(50), nullable = False)
     country_id = db.Column(db.String(3), nullable = False)
 
-    aircraft = db.relationship(
+    aircrafts = db.relationship(
         "Aircraft",
         back_populates = "prefix"
     )
@@ -243,6 +253,7 @@ def create_app():
         type = None
         operators = Operator.query.order_by(Operator.operator_name).all()
         prefixes = RegistrationPrefix.query.order_by(RegistrationPrefix.prefix).all()
+        manufacturers = Manufacturer.query.order_by(Manufacturer.type_icao).all()
         if "user" in session:
             if request.method == "POST":
                 action = request.form["action"]
@@ -251,6 +262,8 @@ def create_app():
                     type="aircraft"
                 elif action == "operator":
                     type="operator"
+                elif action == "manufacturer":
+                    type="manufacturer"
                 elif action == "submit_aircraft":
                     year_produced = request.form["year_produced"]
                     if year_produced:
@@ -266,7 +279,6 @@ def create_app():
                     operator_id = request.form["operator_id"]
                     
                     if Aircraft.query.filter_by(registration=registration, registration_prefix=prefix).first():
-                        print("icao code")
                         error = "Aircraft with this registration already exists."
                         return render_template(
                             "db-add.html",
@@ -282,7 +294,7 @@ def create_app():
                             registration=registration,
                             registration_prefix=prefix,
                             year_produced=year_test,
-                            aircraft_icao=aircraft_icao,
+                            manufacturer_icao=aircraft_icao,
                             operator_id=operator_id
                         )
 
@@ -312,13 +324,28 @@ def create_app():
                         db.session.add(new_operator)
                         db.session.commit()
                         return redirect(url_for("dashboard"))
+                elif action == "submit_manufacturer":
+                    name = request.form["name"].title()
+                    icao = request.form["icao"].upper()
+
+                    if Manufacturer.query.filter_by(type_icao=icao).first():
+                        error = "Already exists!"
+                    else:
+                        new_manufacturer = Manufacturer(
+                            manufacturer_name=name,
+                            type_icao=icao
+                        )
+                        db.session.add(new_manufacturer)
+                        db.session.commit()
+                        return redirect(url_for("dashboard"))
             
             return render_template(
                 "db-add.html",
                 page_title = "Add to the Database",
                 type=type,
                 operators=operators,
-                prefixes=prefixes
+                prefixes=prefixes,
+                manufacturers=manufacturers
             )
         else:
             return redirect(url_for("login", next=request.url))
@@ -343,6 +370,21 @@ def create_app():
                 page_title = "Database (Aircraft)",
                 user=session["user"],
                 aircrafts=aircraft
+            )
+        else:
+            return redirect(url_for("login"))
+
+    @app.route("/database/aircraft/<aircraft_id>")
+    def aircraftdetail(aircraft_id):
+        aircraft = Aircraft.query.get(aircraft_id)
+        if aircraft is None:
+            abort(404)
+        if "user" in session:
+            return render_template(
+                "aircraftdetail.html",
+                page_title = "Database (aircraft.registration_prefix - aircraft.aircraft_icao)",
+                user=session["user"],
+                aircraft=aircraft
             )
         else:
             return redirect(url_for("login"))
