@@ -5,7 +5,9 @@ import csv
 
 db = SQLAlchemy()
 
-manufacturer_operator = db.Table(
+
+
+manufacturer_operator = db.Table( # many-many relationship table - currently no use but for references
     "manufacturer_operator",
     db.Column(
         "operator_icao", db.String,
@@ -18,6 +20,8 @@ manufacturer_operator = db.Table(
         primary_key = True
     ),
 )
+
+# --ALL TABLES RELATING TO THE DATABASE--
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key = True)
@@ -43,7 +47,8 @@ class Operator(db.Model):
     
 class Manufacturer(db.Model):
     type_icao = db.Column(db.String(4), primary_key = True)
-    manufacturer_name = db.Column(db.String(15), nullable = False)
+    manufacturer_name = db.Column(db.String(50), nullable = False)
+    model_name = db.Column(db.String(50), nullable = False)
 
     operators = db.relationship(
         "Operator",
@@ -62,9 +67,9 @@ class Aircraft(db.Model):
     year_produced = db.Column(db.Integer, nullable = True)
     operator_id = db.Column(db.String(3), db.ForeignKey("operator.icao"), nullable=False)
     registration_prefix = db.Column(db.String(5), db.ForeignKey("registration_prefix.prefix"), nullable=False)
-    manufacturer_icao = db.Column(db.Integer, db.ForeignKey("manufacturer.type_icao"), nullable=False)
+    manufacturer_icao = db.Column(db.String(4), db.ForeignKey("manufacturer.type_icao"), nullable=False)
 
-    __table_args__ = (
+    __table_args__ = ( # Checks that the combination of the prefix and registration are unique, so something like ZK-ABC can exist, but so can VH-ABC and not a second ZK-ABC.
         db.UniqueConstraint(
             "registration_prefix",
             "registration",
@@ -99,10 +104,12 @@ class RegistrationPrefix(db.Model):
         back_populates = "prefix"
     )
 
+# --DATABASE TABLES END--
+
 def create_app():
     app = Flask(__name__)
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///plane.db"
-    app.config["SQLALCHEMY_TRACK_MODIFICTIONS"] = False
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["SECRET_KEY"] = "DanielPJKersten"
     
     db.init_app(app)
@@ -110,7 +117,7 @@ def create_app():
     with app.app_context():
         db.create_all()
 
-        if RegistrationPrefix.query.count() == 0:
+        if RegistrationPrefix.query.count() == 0: # Inputs registration prefixes from a csv file when needed to repopulate the database
             with open('registration_prefixes.csv', newline="", encoding="utf-8") as file:
                 reader = csv.DictReader(file)
 
@@ -124,7 +131,7 @@ def create_app():
 
             db.session.commit()
 
-        if not User.query.filter_by(username="admin").first():
+        if not User.query.filter_by(username="admin").first(): # Creates admin account if hasn't already been done
             user = User(
                 username="admin",
                 email="bencerussell@garincollege.nz",
@@ -133,7 +140,7 @@ def create_app():
             db.session.add(user)
             db.session.commit()
 
-        if Operator.query.count() == 0:
+        if Operator.query.count() == 0: # Creates a base set of operators, including privately owned aircraft
             op1 = Operator(icao="ANZ", hub_icao="NZAA", year_founded=1940, operator_name="Air New Zealand")
             op2 = Operator(icao="VOZ", hub_icao="YBBN", year_founded=2000, operator_name="Virgin Australia")
             op3 = Operator(icao="QFA", hub_icao="YSSY", year_founded=1920, operator_name="Qantas")
@@ -166,9 +173,9 @@ def create_app():
         if request.method == "POST":
             action = request.form["action"]
 
-            if action == "create":
-                create_account = True
-            elif action == "actualcreate":
+            if action == "create": # action == "create" when someone selects that they want to create an account, rather than redirecting them to a new page. This reloads the page to show the create_account options on the page.
+                create_account = True 
+            elif action == "actualcreate": # action == "actualcreate" when someone actually clicks 'create account' after inputting their information.
                 create_account = True
 
                 username = request.form["username"]
@@ -186,7 +193,7 @@ def create_app():
                     new_user = User(
                         username=username,
                         email=email,
-                        password=generate_password_hash(password)
+                        password=generate_password_hash(password) # uses werkzeug to convert a string to a secure encrypted hash
                     )
 
                     db.session.add(new_user)
@@ -194,12 +201,12 @@ def create_app():
 
                     session["user"] = username
                     
-                    next_page = request.args.get("next")
+                    next_page = request.args.get("next") # If users have been redirected to login from an original page, it will redirect them to the original page
 
                     if not next_page:
-                        next_page = url_for("home")
+                        next_page = url_for("home") # If the above is not met, users will be redirected to the home page
 
-                    return redirect(next_page)
+                    return redirect(next_page) # Does the actual redirecting
 
             elif action == "login":
                 username = request.form["username"]
@@ -232,7 +239,7 @@ def create_app():
                 "profile.html",
                 page_title = "Profile",
                 user = session["user"],
-                email = user.email if (user := User.query.filter_by(username=session["user"]).first()) else None
+                email = user.email
             )
         else:
             return redirect(url_for("login"))
@@ -374,7 +381,7 @@ def create_app():
         else:
             return redirect(url_for("login"))
 
-    @app.route("/database/aircraft/<aircraft_id>")
+    @app.route("/database/aircraft/<aircraft_id>") #
     def aircraftdetail(aircraft_id):
         aircraft = Aircraft.query.get(aircraft_id)
         if aircraft is None:
@@ -382,7 +389,7 @@ def create_app():
         if "user" in session:
             return render_template(
                 "aircraftdetail.html",
-                page_title = "Database (aircraft.registration_prefix - aircraft.aircraft_icao)",
+                page_title = f"Database ({aircraft.registration_prefix}-{aircraft.registration})",
                 user=session["user"],
                 aircraft=aircraft
             )
