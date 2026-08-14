@@ -183,11 +183,11 @@ def create_app():
                 email = request.form["email"]
                 confirmpassword = request.form["confirm_password"]
 
-                if password != confirmpassword:
+                if password != confirmpassword: # checks if passwords match
                     error = "Passwords do not match."
-                elif User.query.filter_by(username=username).first():
+                elif User.query.filter_by(username=username).first(): # checks if username already exists
                     error = "Username already exists."
-                elif User.query.filter_by(email=email).first():
+                elif User.query.filter_by(email=email).first(): # checks if email is already in use
                     error = "Email already in use."
                 else:
                     new_user = User(
