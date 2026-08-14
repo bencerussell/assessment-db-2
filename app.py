@@ -140,14 +140,14 @@ def create_app():
             db.session.add(user)
             db.session.commit()
 
-        if Operator.query.count() == 0: # Creates a base set of operators, including privately owned aircraft
+        if Operator.query.count() == 0: # Creates a base set of operators, especially that for privately owned aircraft if none already exist
             op1 = Operator(icao="ANZ", hub_icao="NZAA", year_founded=1940, operator_name="Air New Zealand")
             op2 = Operator(icao="VOZ", hub_icao="YBBN", year_founded=2000, operator_name="Virgin Australia")
             op3 = Operator(icao="QFA", hub_icao="YSSY", year_founded=1920, operator_name="Qantas")
             op4 = Operator(icao="BAW", hub_icao="EGLL", year_founded=1974, operator_name="British Airways")
             op5 = Operator(icao="NIL", hub_icao="NONE", year_founded=0, operator_name="Privately Owned")
 
-            db.session.add_all([op1, op2, op3, op4, op5])
+            db.session.add_all([op1, op2, op3, op4, op5]) # Adds the 5 previously defined operators
             db.session.commit()
 
     @app.route("/")
@@ -235,10 +235,11 @@ def create_app():
     @app.route("/profile")
     def profile():
         if "user" in session:
+            user = User.query.filter_by(username=session["user"]).first()
+
             return render_template(
                 "profile.html",
                 page_title = "Profile",
-                user = session["user"],
                 email = user.email
             )
         else:
@@ -258,9 +259,9 @@ def create_app():
     @app.route("/db-add", methods=["GET", "POST"])
     def db_add():
         type = None
-        operators = Operator.query.order_by(Operator.operator_name).all()
-        prefixes = RegistrationPrefix.query.order_by(RegistrationPrefix.prefix).all()
-        manufacturers = Manufacturer.query.order_by(Manufacturer.type_icao).all()
+        operators = Operator.query.order_by(Operator.operator_name).all() # Pulls a list of all operators to use in a <select> HTNL function
+        prefixes = RegistrationPrefix.query.order_by(RegistrationPrefix.prefix).all() # Pulls a list of all registration prefixes to use in a <select> HTNL function 
+        manufacturers = Manufacturer.query.order_by(Manufacturer.type_icao).all() # Pulls a list of all manufcaturers (in reality aircraft type ICAOs) to use in a <select> HTNL function
         if "user" in session:
             if request.method == "POST":
                 action = request.form["action"]
@@ -370,7 +371,7 @@ def create_app():
 
     @app.route("/database/aircraft")
     def dbaircraft():
-        aircraft = Aircraft.query.order_by(Aircraft.operator_id).all()
+        aircraft = Aircraft.query.order_by(Aircraft.operator_id).all() # Pulls all aircraft from the database
         if "user" in session:
             return render_template(
                 "aircraft.html",
@@ -381,15 +382,15 @@ def create_app():
         else:
             return redirect(url_for("login"))
 
-    @app.route("/database/aircraft/<aircraft_id>") #
+    @app.route("/database/aircraft/<aircraft_id>") # Redirects to the selected aircraft ID (from the database page)
     def aircraftdetail(aircraft_id):
-        aircraft = Aircraft.query.get(aircraft_id)
+        aircraft = Aircraft.query.get(aircraft_id) # Locates the aircraft in the database from the ID
         if aircraft is None:
-            abort(404)
+            abort(404) # Aborts if it cannot find the aircraft in order to prevent further errors appearing
         if "user" in session:
             return render_template(
                 "aircraftdetail.html",
-                page_title = f"Database ({aircraft.registration_prefix}-{aircraft.registration})",
+                page_title = f"Database ({aircraft.registration_prefix}-{aircraft.registration})", # Displays the page title using an f-string to include variables
                 user=session["user"],
                 aircraft=aircraft
             )
