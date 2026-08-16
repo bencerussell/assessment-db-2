@@ -34,6 +34,7 @@ class Operator(db.Model):
     hub_icao = db.Column(db.String(4), nullable = False)
     year_founded = db.Column(db.Integer, nullable = False)
     operator_name = db.Column(db.String(25), nullable = False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable = True)
     
     manufacturers = db.relationship(
         "Manufacturer",
@@ -68,6 +69,7 @@ class Aircraft(db.Model):
     operator_id = db.Column(db.String(3), db.ForeignKey("operator.icao"), nullable=False)
     registration_prefix = db.Column(db.String(5), db.ForeignKey("registration_prefix.prefix"), nullable=False)
     manufacturer_icao = db.Column(db.String(4), db.ForeignKey("manufacturer.type_icao"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable = True)
 
     __table_args__ = ( # Checks that the combination of the prefix and registration are unique, so something like ZK-ABC can exist, but so can VH-ABC and not a second ZK-ABC.
         db.UniqueConstraint(
@@ -285,6 +287,7 @@ def create_app():
                     prefix = request.form["prefix"]
                     aircraft_icao = request.form["icao"].upper()
                     operator_id = request.form["operator_id"]
+                    user_id = User.query.filter_by(username=session["user"]).first().id
                     
                     if Aircraft.query.filter_by(registration=registration, registration_prefix=prefix).first():
                         error = "Aircraft with this registration already exists."
@@ -303,7 +306,8 @@ def create_app():
                             registration_prefix=prefix,
                             year_produced=year_test,
                             manufacturer_icao=aircraft_icao,
-                            operator_id=operator_id
+                            operator_id=operator_id,
+                            user_id=user_id
                         )
 
                     db.session.add(new_aircraft)
@@ -318,6 +322,7 @@ def create_app():
                     icao = request.form["icao"].upper()
                     hub_icao = request.form["hub"].upper()
                     operator_name = request.form["name"].title()
+                    user_id = User.query.filter_by(username=session["user"]).first().id
 
                     if Operator.query.filter_by(icao=icao).first():
                         error = "Operator with this ICAO code already exists."
@@ -327,7 +332,8 @@ def create_app():
                             icao=icao,
                             hub_icao=hub_icao,
                             year_founded=year_founded,
-                            operator_name=operator_name
+                            operator_name=operator_name,
+                            user_id=user_id
                         )
                         db.session.add(new_operator)
                         db.session.commit()
