@@ -47,9 +47,11 @@ class Operator(db.Model):
     )
     
 class Manufacturer(db.Model):
-    type_icao = db.Column(db.String(4), primary_key = True)
+    manufacturer_id = db.Column(db.Integer, primary_key = True)
+    type_icao = db.Column(db.String(4), nullable = False)
     manufacturer_name = db.Column(db.String(50), nullable = False)
     model_name = db.Column(db.String(50), nullable = False)
+    wake_cat = db.Column(db.String(1), nullable = False)
 
     operators = db.relationship(
         "Operator",
@@ -58,9 +60,9 @@ class Manufacturer(db.Model):
     )
 
     aircrafts = db.relationship(
-            "Aircraft",
-            back_populates = "manufacturer"
-        )
+        "Aircraft",
+        back_populates = "manufacturer"
+    )
 
 class Aircraft(db.Model):
     id = db.Column(db.Integer, primary_key = True)
@@ -68,7 +70,7 @@ class Aircraft(db.Model):
     year_produced = db.Column(db.Integer, nullable = True)
     operator_id = db.Column(db.String(3), db.ForeignKey("operator.icao"), nullable=False)
     registration_prefix = db.Column(db.String(5), db.ForeignKey("registration_prefix.prefix"), nullable=False)
-    manufacturer_icao = db.Column(db.String(4), db.ForeignKey("manufacturer.type_icao"), nullable=False)
+    manufacturer_id = db.Column(db.Integer, db.ForeignKey("manufacturer.manufacturer_id"), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable = True)
 
     __table_args__ = ( # Checks that the combination of the prefix and registration are unique, so something like ZK-ABC can exist, but so can VH-ABC and not a second ZK-ABC.
@@ -118,6 +120,21 @@ def create_app():
     
     with app.app_context():
         db.create_all()
+
+        if Manufacturer.query.count() == 0: # Inputs manufacturers from a csv file when needed to repopulate the database
+            with open('ac_type.csv', newline="", encoding="utf-8") as file:
+                reader = csv.DictReader(file)
+
+                for row in reader:
+                    manufacturer = Manufacturer(
+                        manufacturer_name = row["manufacturer_name"],
+                        model_name = row["model_name"],
+                        type_icao = row["type_icao"],
+                        wake_cat = row["wake_cat"]
+                    )
+                    db.session.add(manufacturer)
+
+            db.session.commit()
 
         if RegistrationPrefix.query.count() == 0: # Inputs registration prefixes from a csv file when needed to repopulate the database
             with open('registration_prefixes.csv', newline="", encoding="utf-8") as file:
@@ -305,7 +322,7 @@ def create_app():
                             registration=registration,
                             registration_prefix=prefix,
                             year_produced=year_test,
-                            manufacturer_icao=aircraft_icao,
+                            manufacturer_id=aircraft_icao,
                             operator_id=operator_id,
                             user_id=user_id
                         )
@@ -336,20 +353,6 @@ def create_app():
                             user_id=user_id
                         )
                         db.session.add(new_operator)
-                        db.session.commit()
-                        return redirect(url_for("dashboard"))
-                elif action == "submit_manufacturer":
-                    name = request.form["name"].title()
-                    icao = request.form["icao"].upper()
-
-                    if Manufacturer.query.filter_by(type_icao=icao).first():
-                        error = "Already exists!"
-                    else:
-                        new_manufacturer = Manufacturer(
-                            manufacturer_name=name,
-                            type_icao=icao
-                        )
-                        db.session.add(new_manufacturer)
                         db.session.commit()
                         return redirect(url_for("dashboard"))
             

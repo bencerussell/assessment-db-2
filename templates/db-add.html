@@ -6,7 +6,6 @@
 <form method="POST">
     <button style="margin-inline:2px" type="submit" name="action" value="aircraft">Add an Aircraft</button>
     <button style="margin-inline:2px" type="submit" name="action" value="operator">Add an Operator/Airline</button>
-    <button style="margin-inline:2px" type="submit" name="action" value="manufacturer">Add a Manufacturer/Aircraft Type</button>
 </form>
 
 {% if type == 'aircraft' %}
@@ -14,7 +13,7 @@
 <h2>Add an Aircraft</h2>
 
 <form method="POST">
-   <select name="prefix">
+   <select name="prefix" style="text-align: right;">
         {% for regprefix in prefixes %}
             <option value="{{ regprefix.prefix }}">
                 {{ regprefix.prefix }}-
@@ -22,20 +21,15 @@
         {% endfor %}
     </select>
 
-    <input required
+    <input required style="margin-bottom: 2px;"
         type = "text"
         name = "registration"
         placeholder = "Registration (e.g. N115MF)">
 <br>
-    <input
-        type = "text"
-        name = "year_produced"
-        placeholder = "Year of Production (optional)">
-
-    <select name="icao">
+    <select name="icao" style="margin-top:0px; text-align:center;">
         {% for manufacturer in manufacturers %}
-            <option value="{{ manufacturer.type_icao }}">
-                {{ manufacturer.type_icao }} ({{ manufacturer.manufacturer_name }})
+            <option value="{{ manufacturer.manufacturer_id }}">
+                {{ manufacturer.type_icao }} ({{manufacturer.manufacturer_name}} {{ manufacturer.model_name }})
             </option>
         {% endfor %}
     </select>
@@ -47,6 +41,11 @@
             </option>
         {% endfor %}
     </select>
+<br>
+<input style="margin-top:3px;"
+        type = "text"
+        name = "year_produced"
+        placeholder = "Year of Production (optional)">
 <br>
     <button style="margin-inline:2px; margin-top:4px" type="submit" name="action" value="submit_aircraft">Submit</button>
 </form>
@@ -77,24 +76,6 @@
 <br>
     <button style="margin-inline:2px; margin-top:4px" type="submit" name="action" value="submit_operator">Submit</button>
 </form>
-
-{% elif type == 'manufacturer' %}
-
-<h2>Add a Manufacturer</h2>
-
-<form method="POST">
-   <input
-        type = "text"
-        name = "name"
-        placeholder = "Manufacturer Name">
-    <input required
-        type = "text"
-        name = "icao"
-        placeholder = "Aircraft ICAO">
-<br>
-    <button style="margin-inline:2px; margin-top:4px" type="submit" name="action" value="submit_manufacturer">Submit</button>
-</form>
-
 {% endif %}
 
 {% endblock %} 
