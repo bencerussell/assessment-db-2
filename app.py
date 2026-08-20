@@ -1,11 +1,11 @@
 from flask import Flask, render_template, abort, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-import csv
+import csv, requests
+
+APIURL = "http://127.0.0.1:8787"
 
 db = SQLAlchemy()
-
-
 
 manufacturer_operator = db.Table( # many-many relationship table - currently no use but for references
     "manufacturer_operator",
@@ -394,6 +394,13 @@ def create_app():
     @app.route("/database/aircraft/<aircraft_id>") # Redirects to the selected aircraft ID (from the database page)
     def aircraftdetail(aircraft_id):
         aircraft = Aircraft.query.get(aircraft_id) # Locates the aircraft in the database from the ID
+        response = requests.get(
+            APIURL,
+            params={"registration": f"{aircraft.registration_prefix}-{aircraft.registration}"}
+        )
+
+        data = response.json() if response.status_code == 200 else None
+
         if aircraft is None:
             abort(404) # Aborts if it cannot find the aircraft in order to prevent further errors appearing
         if "user" in session:
@@ -401,7 +408,8 @@ def create_app():
                 "aircraftdetail.html",
                 page_title = f"Database ({aircraft.registration_prefix}-{aircraft.registration})", # Displays the page title using an f-string to include variables
                 user=session["user"],
-                aircraft=aircraft
+                aircraft=aircraft,
+                photos=data["photos"] if data else None
             )
         else:
             return redirect(url_for("login"))

@@ -3,6 +3,10 @@
 
 <h2 style="color: #ffffff;">{{aircraft.registration_prefix}}-{{aircraft.registration}}</h2>
 
+{% if photos %}
+<img src="{{ photos[0].imageUrl }}" alt="Aircraft Photo - {{aircraft.registration_prefix}}-{{aircraft.registration}}" style="width: 100%;">
+{% endif %}
+
 <table style="width: 100%; color:#ffffff;">
     <tr>
         <th>Registration</th>
