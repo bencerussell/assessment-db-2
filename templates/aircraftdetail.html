@@ -4,28 +4,35 @@
 <h2 style="color: #ffffff;">{{aircraft.registration_prefix}}-{{aircraft.registration}}</h2>
 
 {% if photos %}
-<img src="{{ photos[0].imageUrl }}" alt="Aircraft Photo - {{aircraft.registration_prefix}}-{{aircraft.registration}}" style="width: 100%;">
-{% endif %}
+<img src="{{ photos[0].imageUrl }}" alt="Aircraft Photo - {{aircraft.registration_prefix}}-{{aircraft.registration}}" style="width: 50%; float:right;">
 
-<table style="width: 100%; color:#ffffff;">
+<table style="width: 50%; color:#ffffff; text-align: left;">
     <tr>
-        <th>Registration</th>
-        <th>Aircraft Type</th>
-        <th>Operator</th>
-        <th>Production Year</th>
+        <td><b>Registration</b></td>
+        <td>{{aircraft.registration_prefix}}-{{aircraft.registration}}</td>
     </tr>
-    {% for aircraft in aircrafts %}
     <tr>
-        <td><a href="/database/aircraft/{{ aircraft.id }}">{{aircraft.registration_prefix}}-{{aircraft.registration}}</a></td>
-        <td>{{aircraft.aircraft_icao}}</td>
+        <td><b>Aircraft Type ICAO</b></td>
+        <td>{{aircraft.manufacturer.type_icao}}/{{aircraft.manufacturer.wake_cat}}</td>
+    </tr>
+    <tr>
+        <td><b>Aircraft Type Name</b></td>
+        <td>{{aircraft.manufacturer.manufacturer_name}} {{aircraft.manufacturer.model_name}}</td>
+    </tr>
+    <tr>
+        <td><b>Operator</b></td>
         <td>{{aircraft.operator.operator_name}}</td>
-        <td>
-            {% if aircraft.year_produced %}
-            {{aircraft.year_produced}}
-            {% endif %}
-        </td>
     </tr>
-    {% endfor %}
+    {% if aircraft.year_produced %}
+    <tr>
+        <td><b>Production Year</b></td>
+        <td>{{aircraft.year_produced}}</td>
+    </tr>
+    {% endif %}
+
+<i>Added on the </i>
 </table>
+
+{% endif %}
 
 {% endblock %} 

@@ -72,6 +72,7 @@ class Aircraft(db.Model):
     registration_prefix = db.Column(db.String(5), db.ForeignKey("registration_prefix.prefix"), nullable=False)
     manufacturer_id = db.Column(db.Integer, db.ForeignKey("manufacturer.manufacturer_id"), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable = True)
+    date_time = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
 
     __table_args__ = ( # Checks that the combination of the prefix and registration are unique, so something like ZK-ABC can exist, but so can VH-ABC and not a second ZK-ABC.
         db.UniqueConstraint(
