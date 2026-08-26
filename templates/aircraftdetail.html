@@ -6,7 +6,7 @@
 {% if photos %}
 <img src="{{ photos[0].imageUrl }}" alt="Aircraft Photo - {{aircraft.registration_prefix}}-{{aircraft.registration}}" style="width: 50%; float:right;">
 
-<table style="width: 50%; color:#ffffff; text-align: left;">
+<table class="aircraftdetail" style="width: 50%; color:#ffffff; text-align: left">
     <tr>
         <td><b>Registration</b></td>
         <td>{{aircraft.registration_prefix}}-{{aircraft.registration}}</td>
@@ -29,8 +29,10 @@
         <td>{{aircraft.year_produced}}</td>
     </tr>
     {% endif %}
-
-<i>Added on the </i>
+    <tr></tr>
+    <tr a>
+        <td colspan="2" style="text-align:center"><i>Added on {{ aircraft.date_time.strftime('%d %B %Y at %H:%M') }}</i></td>
+    </tr>
 </table>
 
 {% endif %}
