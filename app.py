@@ -1,7 +1,7 @@
 from flask import Flask, render_template, abort, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-import csv, requests
+import csv, requests, random
 
 APIURL = "http://127.0.0.1:8787"
 
@@ -415,6 +415,17 @@ def create_app():
         else:
             return redirect(url_for("login"))
 
+    @app.route("/database/aircraft/<aircraft_id>/delete")
+    def deleteaircraft(aircraft_id):
+        if session["user"] != "admin":
+            abort(403)
+        aircraft=Aircraft.query.get(aircraft_id)
+        if aircraft is None:
+            abort(404)
+        db.session.delete(aircraft)
+        db.session.commit()
+        return redirect(url_for("dashboard"))
+
     @app.route("/database/operators")
     def dboperator():
         operators = Operator.query.order_by(Operator.operator_name).all()
@@ -427,6 +438,25 @@ def create_app():
             )
         else:
             return redirect(url_for("login"))
+
+    @app.route("/database/operators/<operator_id>")
+    def operatordetail(operator_id):
+        operator=Operator.query.get(operator_id)
+        if operator is None:
+            abort(404)
+
+        if not operator.aircrafts:
+            photo = None
+        else:
+            aircraft = random.choice(operator.aircrafts)
+            response = requests.get(
+                APIURL,
+                params={"registration": f"{aircraft.registration_prefix}-{aircraft.registration}"}
+            )
+
+            data = response.json() if response.status_code == 200 else None
+
+        
 
     @app.route("/database/manufacturers")
     def manufacturer():
