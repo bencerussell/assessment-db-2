@@ -29,6 +29,15 @@ class User(db.Model):
     password = db.Column(db.String(100), nullable = False)
     email = db.Column(db.String(254), nullable = False, unique = True)
 
+    aircrafts = db.relationship(
+        "Aircraft",
+        back_populates = "user"
+    )
+    operators = db.relationship(
+        "Operator",
+        back_populates = "user"
+    )
+
 class Operator(db.Model):
     icao = db.Column(db.String(3), primary_key = True)
     hub_icao = db.Column(db.String(4), nullable = False)
@@ -44,6 +53,10 @@ class Operator(db.Model):
     aircrafts = db.relationship(
         "Aircraft",
         back_populates = "operator"
+    )
+    user = db.relationship(
+        "User",
+        back_populates = "operators"
     )
     
 class Manufacturer(db.Model):
@@ -72,7 +85,7 @@ class Aircraft(db.Model):
     registration_prefix = db.Column(db.String(5), db.ForeignKey("registration_prefix.prefix"), nullable=False)
     manufacturer_id = db.Column(db.Integer, db.ForeignKey("manufacturer.manufacturer_id"), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable = True)
-    date_time = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
+    date_time = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now(), nullable=False)
 
     __table_args__ = ( # Checks that the combination of the prefix and registration are unique, so something like ZK-ABC can exist, but so can VH-ABC and not a second ZK-ABC.
         db.UniqueConstraint(
@@ -94,6 +107,11 @@ class Aircraft(db.Model):
 
     manufacturer = db.relationship(
         "Manufacturer",
+        back_populates = "aircrafts"
+    )
+
+    user = db.relationship(
+        "User",
         back_populates = "aircrafts"
     )
 
@@ -279,9 +297,9 @@ def create_app():
     @app.route("/db-add", methods=["GET", "POST"])
     def db_add():
         type = None
-        operators = Operator.query.order_by(Operator.operator_name).all() # Pulls a list of all operators to use in a <select> HTNL function
-        prefixes = RegistrationPrefix.query.order_by(RegistrationPrefix.prefix).all() # Pulls a list of all registration prefixes to use in a <select> HTNL function 
-        manufacturers = Manufacturer.query.order_by(Manufacturer.type_icao).all() # Pulls a list of all manufcaturers (in reality aircraft type ICAOs) to use in a <select> HTNL function
+        operators = Operator.query.order_by(Operator.operator_name).all() # Pulls a list of all operators to use in a <select> HTML function
+        prefixes = RegistrationPrefix.query.order_by(RegistrationPrefix.prefix).all() # Pulls a list of all registration prefixes to use in a <select> HTML function 
+        manufacturers = Manufacturer.query.order_by(Manufacturer.type_icao).all() # Pulls a list of all manufcaturers (in reality aircraft type ICAOs) to use in a <select> HTML function
         if "user" in session:
             if request.method == "POST":
                 action = request.form["action"]
@@ -296,11 +314,10 @@ def create_app():
                     year_produced = request.form["year_produced"]
                     if year_produced:
                         try:
-                            year_test = int(request.form["year_produced"])
+                            year_produced = int(request.form["year_produced"])
                         except ValueError:
-                            return redirect(url_for("db_add")) #make this return to the relevant page 
-                    else:
-                        year_test = year_produced
+                            year_produced = None
+
                     registration = request.form["registration"].upper()
                     prefix = request.form["prefix"]
                     aircraft_icao = request.form["icao"].upper()
@@ -322,7 +339,7 @@ def create_app():
                         new_aircraft = Aircraft(
                             registration=registration,
                             registration_prefix=prefix,
-                            year_produced=year_test,
+                            year_produced=year_produced,
                             manufacturer_id=aircraft_icao,
                             operator_id=operator_id,
                             user_id=user_id
@@ -381,7 +398,7 @@ def create_app():
 
     @app.route("/database/aircraft")
     def dbaircraft():
-        aircraft = Aircraft.query.order_by(Aircraft.operator_id).all() # Pulls all aircraft from the database
+        aircraft = Aircraft.query.order_by(Aircraft.operator_id, Aircraft.registration_prefix, Aircraft.registration).all() # Pulls all aircraft from the database
         if "user" in session:
             return render_template(
                 "aircraft.html",
@@ -395,6 +412,8 @@ def create_app():
     @app.route("/database/aircraft/<aircraft_id>") # Redirects to the selected aircraft ID (from the database page)
     def aircraftdetail(aircraft_id):
         aircraft = Aircraft.query.get(aircraft_id) # Locates the aircraft in the database from the ID
+        if aircraft is None:
+            abort(404) # Aborts if it cannot find the aircraft in order to prevent further errors appearing
         response = requests.get(
             APIURL,
             params={"registration": f"{aircraft.registration_prefix}-{aircraft.registration}"}
@@ -402,8 +421,6 @@ def create_app():
 
         data = response.json() if response.status_code == 200 else None
 
-        if aircraft is None:
-            abort(404) # Aborts if it cannot find the aircraft in order to prevent further errors appearing
         if "user" in session:
             return render_template(
                 "aircraftdetail.html",
@@ -424,7 +441,56 @@ def create_app():
             abort(404)
         db.session.delete(aircraft)
         db.session.commit()
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("dbaircraft"))
+
+    @app.route("/database/aircraft/<aircraft_id>/edit", methods=["GET", "POST"])
+    def editaircraft(aircraft_id):
+        if session["user"] != "admin":
+            abort(403)
+        aircraft=Aircraft.query.get(aircraft_id)
+        operators = Operator.query.order_by(Operator.operator_name).all() # Pulls a list of all operators to use in a <select> HTML function
+        prefixes = RegistrationPrefix.query.order_by(RegistrationPrefix.prefix).all() # Pulls a list of all registration prefixes to use in a <select> HTML function 
+        manufacturers = Manufacturer.query.order_by(Manufacturer.type_icao).all() # Pulls a list of all manufcaturers (in reality aircraft type ICAOs) to use in a <select> HTML function
+
+        if aircraft is None:
+            abort(404)
+
+        response = requests.get(
+            APIURL,
+            params={"registration": f"{aircraft.registration_prefix}-{aircraft.registration}"}
+        )
+
+        data = response.json() if response.status_code == 200 else None
+
+        if request.method == "POST":
+            action = request.form["action"]
+
+            if action == "saveedit":
+                year_produced = request.form["year_produced"]
+                if year_produced:
+                    try:
+                        year_produced = int(request.form["year_produced"])
+                    except ValueError:
+                        year_produced = None
+                aircraft_icao = request.form["icao"].upper()
+                operator_id = request.form["operator_id"]
+
+                aircraft.manufacturer_id = aircraft_icao
+                aircraft.operator_id = operator_id
+                aircraft.year_produced = year_produced
+                db.session.commit()
+
+                return redirect(url_for("aircraftdetail", aircraft_id=aircraft_id))
+
+        return render_template(
+            "aircraftedit.html",
+            page_title=f"Edit ({aircraft.registration_prefix}-{aircraft.registration})",
+            aircraft=aircraft,
+            operators=operators,
+            manufacturers=manufacturers,
+            photos=data["photos"] if data else None
+        )
+
 
     @app.route("/database/operators")
     def dboperator():

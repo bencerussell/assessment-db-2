@@ -5,6 +5,7 @@
 
 {% if photos %}
 <img src="{{ photos[0].imageUrl }}" alt="Aircraft Photo - {{aircraft.registration_prefix}}-{{aircraft.registration}}" style="width: 50%; float:right;">
+{% endif %}
 
 <table class="aircraftdetail" style="{% if photos %}width: 50%;{% endif %} color:#ffffff; text-align: left">
     <tr>
@@ -31,7 +32,7 @@
     {% endif %}
     <tr><td>&nbsp;</td></tr>
     <tr>
-        <td colspan="2" style="text-align:center"><i>Added on {{ aircraft.date_time.strftime('%d %B %Y at %H:%M') }}</i></td>
+        <td colspan="2" style="text-align:center"><i>Added on {{ aircraft.date_time.strftime('%d %B %Y at %H:%M') }} {% if user == "admin" %}by {{aircraft.user.username}}. {% endif %}</i></td>
     </tr>
     {% if user == "admin" %}
     <tr><td>&nbsp;</td></tr>
@@ -41,7 +42,5 @@
     </tr>
     {% endif %}
 </table>
-
-{% endif %}
 
 {% endblock %} 

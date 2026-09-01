@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h2 style="color:#ffffff">Edit Aircraft</h2>
+
+{% if photos %}
+<img src="{{ photos[0].imageUrl }}" alt="Aircraft Photo - {{aircraft.registration_prefix}}-{{aircraft.registration}}" style="width: 50%; float:right;">
+{% endif %}
+
+<table class="aircraftdetail" style="{% if photos %}width: 50%;{% endif %} color:#ffffff; text-align: left">
+    <tr>
+        <td><b>Registration</b></td>
+        <td>{{aircraft.registration_prefix}}-{{aircraft.registration}}</td>
+    </tr>
+    <tr>
+        <td><b>Aircraft Type ICAO</b></td>
+        <td>{{aircraft.manufacturer.type_icao}}/{{aircraft.manufacturer.wake_cat}}</td>
+    </tr>
+    <tr>
+        <td><b>Aircraft Type Name</b></td>
+        <td>{{aircraft.manufacturer.manufacturer_name}} {{aircraft.manufacturer.model_name}}</td>
+    </tr>
+    <tr>
+        <td><b>Operator</b></td>
+        <td>{{aircraft.operator.operator_name}}</td>
+    </tr>
+    {% if aircraft.year_produced %}
+    <tr>
+        <td><b>Production Year</b></td>
+        <td>{{aircraft.year_produced}}</td>
+    </tr>
+    {% endif %}
+    <tr><td>&nbsp;</td></tr>
+    <tr>
+        <td colspan="2" style="text-align:center"><i>Added on {{ aircraft.date_time.strftime('%d %B %Y at %H:%M') }} by {{aircraft.user.username}}.</i></td>
+    </tr>
+</table>
+
+<form method="POST" style="clear:both">
+<br>
+    <select name="icao" style="margin-top:0px; text-align:center;">
+        {% for manufacturer in manufacturers %}
+            <option value="{{ manufacturer.manufacturer_id }}">
+                {{ manufacturer.type_icao }} ({{manufacturer.manufacturer_name}} {{ manufacturer.model_name }})
+            </option>
+        {% endfor %}
+    </select>
+    <br>
+    <select name="operator_id">
+        {% for operator in operators %}
+            <option value="{{ operator.icao }}">
+                {{ operator.operator_name }} ({{ operator.icao }})
+            </option>
+        {% endfor %}
+    </select>
+<br>
+<input style="margin-top:3px;"
+        type = "text"
+        name = "year_produced"
+        placeholder = "Year of Production (optional)">
+<br>
+    <button style="margin-inline:2px; margin-top:4px" type="submit" name="action" value="saveedit">Save Edits</button>
+</form>
+
+{% endblock %} 
