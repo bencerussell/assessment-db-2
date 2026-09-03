@@ -13,7 +13,7 @@
     </tr>
     {% for operator in operators %}
     <tr>
-        <td>{{operator.operator_name}}</td>
+        <td><a href="/database/operators/{{operator.icao}}" style="color:#ffffff">{{operator.operator_name}}</a></td>
         <td>{{operator.icao}}</td>
         <td>{{operator.hub_icao}}</td>
         <td>{{operator.year_founded}}</td>

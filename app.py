@@ -44,6 +44,7 @@ class Operator(db.Model):
     year_founded = db.Column(db.Integer, nullable = False)
     operator_name = db.Column(db.String(25), nullable = False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable = True)
+    date_time = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now(), nullable=False)
     
     manufacturers = db.relationship(
         "Manufacturer",
@@ -179,11 +180,11 @@ def create_app():
             db.session.commit()
 
         if Operator.query.count() == 0: # Creates a base set of operators, especially that for privately owned aircraft if none already exist
-            op1 = Operator(icao="ANZ", hub_icao="NZAA", year_founded=1940, operator_name="Air New Zealand")
-            op2 = Operator(icao="VOZ", hub_icao="YBBN", year_founded=2000, operator_name="Virgin Australia")
-            op3 = Operator(icao="QFA", hub_icao="YSSY", year_founded=1920, operator_name="Qantas")
-            op4 = Operator(icao="BAW", hub_icao="EGLL", year_founded=1974, operator_name="British Airways")
-            op5 = Operator(icao="NIL", hub_icao="NONE", year_founded=0, operator_name="Privately Owned")
+            op1 = Operator(icao="ANZ", hub_icao="NZAA", year_founded=1940, operator_name="Air New Zealand", user_id=1)
+            op2 = Operator(icao="VOZ", hub_icao="YBBN", year_founded=2000, operator_name="Virgin Australia", user_id=1)
+            op3 = Operator(icao="QFA", hub_icao="YSSY", year_founded=1920, operator_name="Qantas", user_id=1)
+            op4 = Operator(icao="BAW", hub_icao="EGLL", year_founded=1974, operator_name="British Airways", user_id=1)
+            op5 = Operator(icao="NIL", hub_icao="NONE", year_founded=0, operator_name="Privately Owned", user_id=1)
 
             db.session.add_all([op1, op2, op3, op4, op5]) # Adds the 5 previously defined operators
             db.session.commit()
@@ -508,6 +509,7 @@ def create_app():
     @app.route("/database/operators/<operator_id>")
     def operatordetail(operator_id):
         operator=Operator.query.get(operator_id)
+        data = None
         if operator is None:
             abort(404)
 
@@ -522,7 +524,21 @@ def create_app():
 
             data = response.json() if response.status_code == 200 else None
 
-        
+        if data != None:
+            photos=data["photos"]
+        else:
+            photos=None
+
+        return render_template(
+            "operatordetail.html",
+            page_title = f"Database ({operator.icao})",
+            operator=operator,
+            photos=photos,
+            user=session["user"],
+            registration=f"{aircraft.registration_prefix}-{aircraft.registration}" if operator.aircrafts else None,
+            number = len(operator.aircrafts)
+        )
+
 
     @app.route("/database/manufacturers")
     def manufacturer():
