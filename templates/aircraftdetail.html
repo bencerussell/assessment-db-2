@@ -32,7 +32,7 @@
     {% endif %}
     <tr><td>&nbsp;</td></tr>
     <tr>
-        <td colspan="2" style="text-align:center"><i>Added on {{ aircraft.date_time.strftime('%d %B %Y at %H:%M') }} {% if user == "admin" %}by {{aircraft.user.username}}. {% endif %}</i></td>
+        <td colspan="2" style="text-align:center"><i>Modified last on {{ aircraft.date_time.strftime('%d %B %Y at %H:%M') }} {% if user == "admin" %}by {{aircraft.user.username}}. {% endif %}</i></td>
     </tr>
     {% if user == "admin" %}
     <tr><td>&nbsp;</td></tr>

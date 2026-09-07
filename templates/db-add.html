@@ -8,6 +8,10 @@
     <button style="margin-inline:2px" type="submit" name="action" value="operator">Add an Operator/Airline</button>
 </form>
 
+{% if error %}
+<p style="color:#f00000">{{error}}</p>
+{% endif %}
+
 {% if type == 'aircraft' %}
 
 <h2>Add an Aircraft</h2>
@@ -24,12 +28,12 @@
     <input required style="margin-bottom: 2px;"
         type = "text"
         name = "registration"
-        placeholder = "Registration (e.g. N115MF)">
+        placeholder = "Registration (e.g. 115MF)">
 <br>
     <select name="icao" style="margin-top:0px; text-align:center;">
         {% for manufacturer in manufacturers %}
             <option value="{{ manufacturer.manufacturer_id }}">
-                {{ manufacturer.type_icao }} ({{manufacturer.manufacturer_name}} {{ manufacturer.model_name }})
+                {{manufacturer.manufacturer_name}} - {{ manufacturer.type_icao }} ({{ manufacturer.model_name }})
             </option>
         {% endfor %}
     </select>

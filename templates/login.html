@@ -8,6 +8,10 @@ Login
 
 {% block content %}
 
+{% if error %}
+<p style="color:#fa6565">{{error}}</p>
+{% endif %}
+
 {% if create_account %}
 <h2>Create Account</h2>
 {% else %}

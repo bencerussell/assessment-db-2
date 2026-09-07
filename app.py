@@ -300,7 +300,7 @@ def create_app():
         type = None
         operators = Operator.query.order_by(Operator.operator_name).all() # Pulls a list of all operators to use in a <select> HTML function
         prefixes = RegistrationPrefix.query.order_by(RegistrationPrefix.prefix).all() # Pulls a list of all registration prefixes to use in a <select> HTML function 
-        manufacturers = Manufacturer.query.order_by(Manufacturer.type_icao).all() # Pulls a list of all manufcaturers (in reality aircraft type ICAOs) to use in a <select> HTML function
+        manufacturers = Manufacturer.query.order_by(Manufacturer.manufacturer_name).all() # Pulls a list of all manufcaturers (in reality aircraft type ICAOs) to use in a <select> HTML function
         if "user" in session:
             if request.method == "POST":
                 action = request.form["action"]
@@ -415,9 +415,14 @@ def create_app():
         aircraft = Aircraft.query.get(aircraft_id) # Locates the aircraft in the database from the ID
         if aircraft is None:
             abort(404) # Aborts if it cannot find the aircraft in order to prevent further errors appearing
+        prefix = aircraft.registration_prefix
+        if prefix != "N" and prefix != "JA" and prefix != "HL" and prefix != "VP-A" and prefix!= "VP-B" and prefix != "VQ-B":
+            registration = f"{aircraft.registration_prefix}-{aircraft.registration}"
+        else:  
+            registration = f"{aircraft.registration_prefix}{aircraft.registration}"
         response = requests.get(
             APIURL,
-            params={"registration": f"{aircraft.registration_prefix}-{aircraft.registration}"}
+            params={"registration":registration}
         )
 
         data = response.json() if response.status_code == 200 else None
@@ -456,9 +461,15 @@ def create_app():
         if aircraft is None:
             abort(404)
 
+        prefix = aircraft.registration_prefix
+        if prefix != "N" and prefix != "JA" and prefix != "HL" and prefix != "VP-A" and prefix!= "VP-B" and prefix != "VQ-B":
+            registration = f"{aircraft.registration_prefix}-{aircraft.registration}"
+        else:  
+            registration = f"{aircraft.registration_prefix}{aircraft.registration}"
+
         response = requests.get(
             APIURL,
-            params={"registration": f"{aircraft.registration_prefix}-{aircraft.registration}"}
+            params={"registration": registration}
         )
 
         data = response.json() if response.status_code == 200 else None
@@ -517,9 +528,14 @@ def create_app():
             photo = None
         else:
             aircraft = random.choice(operator.aircrafts)
+            prefix = aircraft.registration_prefix
+            if prefix != "N" and prefix != "JA" and prefix != "HL" and prefix != "VP-A" and prefix!= "VP-B" and prefix != "VQ-B":
+                    registration = f"{aircraft.registration_prefix}-{aircraft.registration}"
+            else:  
+                registration = f"{aircraft.registration_prefix}{aircraft.registration}"
             response = requests.get(
                 APIURL,
-                params={"registration": f"{aircraft.registration_prefix}-{aircraft.registration}"}
+                params={"registration": registration}
             )
 
             data = response.json() if response.status_code == 200 else None
