@@ -32,13 +32,26 @@
     <tr>
         <td colspan="2" style="text-align:center"><i>Added on {{ operator.date_time.strftime('%d %B %Y at %H:%M') }} {% if user == "admin" %}by {{operator.user.username}}. {% endif %}</i></td>
     </tr>
-    {% if user == "admin" %}
-    <tr><td>&nbsp;</td></tr>
-    <tr>
-        <td style="text-align:center"><a href="/database/operator/{{ operator.icao }}/edit" style="color:#ffffff" >Edit Operator</a></td>
-        <td style="text-align:center"><a href="/database/operator/{{ operator.icao }}/delete" style="color:#ffffff">Delete Operator</a></td>
-    </tr>
-    {% endif %}
 </table>
+
+<form method="POST" style="clear:both">
+    <br>
+    <input required
+        type = "text"
+        name = "hub"
+        placeholder = "Primary Hub (e.g. NZAA)">
+<br>
+    <input
+        type = "text"
+        name = "year"
+        placeholder = "Year Founded">
+
+    <input required
+        type = "text"
+        name = "name"
+        placeholder = "Operator Name">
+<br>
+    <button style="margin-inline:2px; margin-top:4px" type="submit" name="action" value="submit_operator">Save Edits</button>
+</form>
 
 {% endblock %} 
