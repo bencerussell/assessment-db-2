@@ -194,7 +194,7 @@ def create_app():
         return render_template(
             "home.html",
             page_title = "Home",
-            greeting = "Hello, Daniel Peter James Kersten (the one born on May 5th 2009)! I've been expecting you... have you done your calculus homework?"
+            greeting = "[PLACEHOLDER]"
             )
         
     @app.route("/about-us")
@@ -285,7 +285,8 @@ def create_app():
             return render_template(
                 "profile.html",
                 page_title = "Profile",
-                email = user.email
+                email = user.email,
+                user=user.username
             )
         else:
             return redirect(url_for("login"))
