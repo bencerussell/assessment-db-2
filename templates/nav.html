@@ -2,10 +2,12 @@
   <button style="margin-inline:2px" type="button" onclick="window.location.href='/'">Home</button>
   <button style="margin-inline:2px" type="button" onclick="window.location.href='/dashboard'">Dashboard</button>
   <button style="margin-inline:2px" type="button" onclick="window.location.href='/about-us'">About Us</button>
-
+  {% if is_admin %}
+  <button style="margin-inline:2px; margin-inline-start:auto;"  class="login-link" type="button" onclick="window.location.href='/admin'">Admin</button>
+  {% endif %}
   {% if logged_in %}
-    <button style="margin-inline:2px; margin-inline-start:auto;"  class="login-link" type="button" onclick="window.location.href='/profile'">Profile</button>
+    <button style="margin-inline:2px;"  class="login-link" type="button" onclick="window.location.href='/profile'">Profile</button>
   {% else %}
-    <button style="margin-inline:2px; margin-inline-start:auto;"  class="login-link" type="button" onclick="window.location.href='/login'">Login</button>
+    <button style="margin-inline:2px;"  class="login-link" type="button" onclick="window.location.href='/login'">Login</button>
   {% endif %}
 </nav>

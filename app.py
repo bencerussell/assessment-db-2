@@ -1,10 +1,7 @@
 from flask import Flask, render_template, abort, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from itertools import cycle
-from PIL import Image, ImageTk
-import csv, requests, random, time
-import tkinter as tk
+import csv, requests, random
 
 APIURL = "http://127.0.0.1:8787"
 
@@ -31,6 +28,7 @@ class User(db.Model):
     username = db.Column(db.String(20), unique = True, nullable = False)
     password = db.Column(db.String(100), nullable = False)
     email = db.Column(db.String(254), nullable = False, unique = True)
+    admin = db.Column(db.Boolean, default = False)
 
     aircrafts = db.relationship(
         "Aircraft",
@@ -48,6 +46,7 @@ class Operator(db.Model):
     operator_name = db.Column(db.String(25), nullable = False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable = True)
     date_time = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now(), nullable=False)
+    callsign = db.Column(db.String(50))
     
     manufacturers = db.relationship(
         "Manufacturer",
@@ -177,16 +176,17 @@ def create_app():
             user = User(
                 username="admin",
                 email="bencerussell@garincollege.nz",
-                password=generate_password_hash("password123")
+                password=generate_password_hash("password123"),
+                admin=True
             )
             db.session.add(user)
             db.session.commit()
 
         if Operator.query.count() == 0: # Creates a base set of operators, especially that for privately owned aircraft if none already exist
-            op1 = Operator(icao="ANZ", hub_icao="NZAA", year_founded=1940, operator_name="Air New Zealand", user_id=1)
-            op2 = Operator(icao="VOZ", hub_icao="YBBN", year_founded=2000, operator_name="Virgin Australia", user_id=1)
-            op3 = Operator(icao="QFA", hub_icao="YSSY", year_founded=1920, operator_name="Qantas", user_id=1)
-            op4 = Operator(icao="BAW", hub_icao="EGLL", year_founded=1974, operator_name="British Airways", user_id=1)
+            op1 = Operator(icao="ANZ", hub_icao="NZAA", year_founded=1940, operator_name="Air New Zealand", user_id=1, callsign="New Zealand")
+            op2 = Operator(icao="VOZ", hub_icao="YBBN", year_founded=2000, operator_name="Virgin Australia", user_id=1, callsign="Velocity")
+            op3 = Operator(icao="QFA", hub_icao="YSSY", year_founded=1920, operator_name="Qantas", user_id=1, callsign="Qantas")
+            op4 = Operator(icao="BAW", hub_icao="EGLL", year_founded=1924, operator_name="British Airways", user_id=1, callsign="Speedbird")
             op5 = Operator(icao="NIL", hub_icao="NONE", year_founded=0, operator_name="Privately Owned", user_id=1)
 
             db.session.add_all([op5, op1, op2, op3, op4]) # Adds the 5 previously defined operators
@@ -287,8 +287,8 @@ def create_app():
 
             return render_template(
                 "profile.html",
-                page_title = "Profile",
-                email = user.email,
+                page_title="Profile",
+                email=user.email,
                 user=user.username
             )
         else:
@@ -369,6 +369,7 @@ def create_app():
                     hub_icao = request.form["hub"].upper()
                     operator_name = request.form["name"].title()
                     user_id = User.query.filter_by(username=session["user"]).first().id
+                    callsign=request.form["callsign"].title()
 
                     if Operator.query.filter_by(icao=icao).first():
                         error = "Operator with this ICAO code already exists."
@@ -379,7 +380,8 @@ def create_app():
                             hub_icao=hub_icao,
                             year_founded=year_founded,
                             operator_name=operator_name,
-                            user_id=user_id
+                            user_id=user_id,
+                            callsign=callsign
                         )
                         db.session.add(new_operator)
                         db.session.commit()
@@ -450,7 +452,7 @@ def create_app():
 
     @app.route("/database/aircraft/<aircraft_id>/delete")
     def deleteaircraft(aircraft_id):
-        if session["user"] != "admin":
+        if not User.query.filter_by(username=session["user"]).first() or User.query.filter_by(username=session["user"]).first().admin != True:
             abort(403)
         aircraft=Aircraft.query.get(aircraft_id)
         if aircraft is None:
@@ -461,7 +463,7 @@ def create_app():
 
     @app.route("/database/aircraft/<aircraft_id>/edit", methods=["GET", "POST"])
     def editaircraft(aircraft_id):
-        if session["user"] != "admin":
+        if not User.query.filter_by(username=session["user"]).first() or User.query.filter_by(username=session["user"]).first().admin != True:
             abort(403)
         aircraft=Aircraft.query.get(aircraft_id)
         operators = Operator.query.order_by(Operator.operator_name).all() # Pulls a list of all operators to use in a <select> HTML function
@@ -567,7 +569,7 @@ def create_app():
 
     @app.route("/database/operator/<operator_id>/edit", methods=["GET", "POST"])
     def editoperator(operator_id):
-        if session["user"] != "admin":
+        if not User.query.filter_by(username=session["user"]).first() or User.query.filter_by(username=session["user"]).first().admin != True:
             abort(403)
         if operator_id == "NIL":
             abort(403)
@@ -607,6 +609,16 @@ def create_app():
             number = len(operator.aircrafts)
         )
 
+    @app.route("/database/operator/<operator_id>/delete")
+    def deleteoperator(operator_id):
+            if not User.query.filter_by(username=session["user"]).first() or User.query.filter_by(username=session["user"]).first().admin != True:
+                abort(403)
+            operator=Operator.query.get(operator_id)
+            if operator is None:
+                abort(404)
+            db.session.delete(operator)
+            db.session.commit()
+            return redirect(url_for("dboperator"))
 
     @app.route("/database/manufacturers")
     def manufacturer():
@@ -632,8 +644,15 @@ app = create_app()
 
 @app.context_processor
 def inject_user():
+   if "user" in session:
+       user=User.query.filter_by(username=session["user"]).first()
+       is_admin = user is not None and user.admin is True
+   else:
+       is_admin = False
+
    return{
-       "logged_in": "user" in session   
+       "logged_in": "user" in session,
+       "is_admin":  is_admin
    }
 
 if __name__ == "__main__":
