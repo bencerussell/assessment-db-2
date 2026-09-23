@@ -4,7 +4,7 @@
 <h2 style="color: #ffffff;">{{operator.operator_name}} ({{operator.icao}})</h2>
 
 {% if photos %}
-<img src="{{ photos[0].imageUrl }}" alt="Aircraft Photo - {{registration}}" style="width: 50%; float:right;">
+<img src="{{ photos[0].imageUrl }}" alt="Aircraft Photo - {{registration}}" style="width: 49%; float:right;">
 {% endif %}
 
 <table class="aircraftdetail" style="{% if photos %}width: 50%;{%else%}width:100%;{% endif %} color:#ffffff; text-align: left">
@@ -28,7 +28,7 @@
         <td><b>Year Founded</b></td>
         <td>{{operator.year_produced}}</td>
     </tr>
-    <tr><td>&nbsp;</td></tr>
+    <tr><td colspan="2">&nbsp;</td></tr>
     <tr>
         <td colspan="2" style="text-align:center"><i>Added on {{ operator.date_time.strftime('%d %B %Y at %H:%M') }} {% if user == "admin" %}by {{operator.user.username}}. {% endif %}</i></td>
     </tr>

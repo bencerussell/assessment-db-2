@@ -1,7 +1,10 @@
 from flask import Flask, render_template, abort, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-import csv, requests, random
+from itertools import cycle
+from PIL import Image, ImageTk
+import csv, requests, random, time
+import tkinter as tk
 
 APIURL = "http://127.0.0.1:8787"
 
@@ -194,7 +197,7 @@ def create_app():
         return render_template(
             "home.html",
             page_title = "Home",
-            greeting = "[PLACEHOLDER]"
+            greeting = "Welcome to AeroBase"
             )
         
     @app.route("/about-us")

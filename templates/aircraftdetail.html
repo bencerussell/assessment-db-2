@@ -4,7 +4,7 @@
 <h2 style="color: #ffffff;">{{aircraft.registration_prefix}}-{{aircraft.registration}}</h2>
 
 {% if photos %}
-<img src="{{ photos[0].imageUrl }}" alt="Aircraft Photo - {{aircraft.registration_prefix}}-{{aircraft.registration}}" style="width: 50%; float:right;">
+<img src="{{ photos[0].imageUrl }}" alt="Aircraft Photo - {{aircraft.registration_prefix}}-{{aircraft.registration}}" style="width: 49%; float:right;">
 {% endif %}
 
 <table class="aircraftdetail" style="{% if photos %}width: 50%;{% endif %} color:#ffffff; text-align: left">
@@ -34,12 +34,12 @@
         <td>{{aircraft.year_produced}}</td>
     </tr>
     {% endif %}
-    <tr><td>&nbsp;</td></tr>
+    <tr><td colspan="2">&nbsp;</td></tr>
     <tr>
         <td colspan="2" style="text-align:center"><i>Modified last on {{ aircraft.date_time.strftime('%d %B %Y at %H:%M') }} {% if user == "admin" %}by {{aircraft.user.username}}. {% endif %}</i></td>
     </tr>
     {% if user == "admin" %}
-    <tr><td>&nbsp;</td></tr>
+    <tr><td colspan="2">&nbsp;</td></tr>
     <tr>
         <td style="text-align:center"><a href="/database/aircraft/{{ aircraft.id }}/edit" style="color:#ffffff" >Edit Aircraft</a></td>
         <td style="text-align:center"><a href="/database/aircraft/{{ aircraft.id }}/delete" style="color:#ffffff">Delete Aircraft</a></td>
