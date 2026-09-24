@@ -4,10 +4,10 @@
 <h2 style="color: #ffffff;">{{operator.operator_name}} ({{operator.icao}})</h2>
 
 {% if photos %}
-<img src="{{ photos[0].imageUrl }}" alt="Aircraft Photo - {{registration}}" style="width: 49%; float:right; padding-bottom:10px;">
+<img src="{{ photos[0].imageUrl }}" alt="Aircraft Photo - {{registration}}" style="width: 49%; float:right; margin-bottom:10px;">
 {% endif %}
 
-<table class="aircraftdetail" style="{% if photos %}width: 50%;{%else%}width:100%;{% endif %} color:#ffffff; text-align: left">
+<table class="aircraftdetail" style="{% if photos %}width: 50%;{%else%}width:100%;{% endif %} color:#ffffff; text-align: left; margin-bottom:10px;">
     <tr>
         <td><b>Name</b></td>
         <td>{{operator.operator_name}}</td>
@@ -41,6 +41,8 @@
     {% endif %}
 </table>
 
+{% if operator.aircrafts %}
+
 <table style="clear:both; width:50%; margin:auto;">
     <tr>
         <th>Registration</th>
@@ -58,5 +60,7 @@
     </tr>
     {% endfor %}
 </table>
+
+{%endif%}
 
 {% endblock %} 

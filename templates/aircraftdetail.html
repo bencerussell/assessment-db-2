@@ -4,10 +4,10 @@
 <h2 style="color: #ffffff;">{{aircraft.registration_prefix}}-{{aircraft.registration}}</h2>
 
 {% if photos %}
-<img src="{{ photos[0].imageUrl }}" alt="Aircraft Photo - {{aircraft.registration_prefix}}-{{aircraft.registration}}" style="width: 49%; float:right;">
+<img src="{{ photos[0].imageUrl }}" alt="Aircraft Photo - {{aircraft.registration_prefix}}-{{aircraft.registration}}" style="width: 49%; float:right; margin-bottom:10px;">
 {% endif %}
 
-<table class="aircraftdetail" style="{% if photos %}width: 50%;{% endif %} color:#ffffff; text-align: left">
+<table class="aircraftdetail" style="{% if photos %}width: 50%;{% else %}width:100%;{% endif %} color:#ffffff; text-align: left; margin-bottom:10px;">
     {% if aircraft.registration_prefix != "N" and aircraft.registration_prefix != "JA" and aircraft.registration_prefix != "HL" and aircraft.registration_prefix != "VP-A" and aircraft.registration_prefix!= "VP-B" and aircraft.registration_prefix != "VQ-B" %}
     {% set registration = aircraft.registration_prefix + "-" + aircraft.registration %}
     {% else %}

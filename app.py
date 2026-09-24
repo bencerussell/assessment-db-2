@@ -172,6 +172,25 @@ def create_app():
 
             db.session.commit()
 
+        if Aircraft.query.count() == 0: # Inputs manufacturers from a csv file when needed to repopulate the database
+            with open('aircraft.csv', newline="", encoding="utf-8") as file:
+                reader = csv.DictReader(file)
+
+                for row in reader:
+                    aircraft = Aircraft(
+                        registration = row["registration"],
+                        year_produced = row["year"],
+                        operator_id = row["operator"],
+                        registration_prefix = row["prefix"],
+                        manufacturer_id = row["manufacturer"],
+                        user_id = 1
+                    )
+                    db.session.add(aircraft)
+
+        db.session.commit()
+
+            
+
         if not User.query.filter_by(username="admin").first(): # Creates admin account if hasn't already been done
             user = User(
                 username="admin",
