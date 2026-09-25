@@ -48,8 +48,10 @@ nav {
     align-items: center;
 }
 
-nav a {
-    margin-right: 12px;
+.nav-right {
+	margin-left: auto;
+    display: flex;
+    align-items: center;
 }
  
 /* Footer at the bottom of every page */
@@ -60,9 +62,22 @@ footer {
 }
 
 input {
-	padding: 2px;
+	padding: 5px;
 	border-radius: 5px;
+	border:0px;
 	margin-bottom: 4px;
+	size:100%;
+	font-size:80%;
+}
+
+select {
+	padding: 4px;
+	border-radius: 5px;
+	border:0px;
+	margin-bottom: 4px;
+	size:100%;
+	font-size:80%;
+	margin-bottom:0.5%;
 }
 
 .aircraftdetail td, .aircraftdetail tr {
@@ -93,13 +108,14 @@ button {
 	background-color:transparent;
 	border:none;
 	color:#ffffff;
-	padding:1%;
+	padding:10px;
 	text-align:center;
 	cursor:pointer;
 	border-radius:10px;
 	font-size:100%;
 	font-weight:bold;
 }
+
 button:hover {
 	background-color:#284c81;
 	opacity: 100;
