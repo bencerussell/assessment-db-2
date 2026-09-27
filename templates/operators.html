@@ -1,25 +1,36 @@
 {% extends "layout.html" %}
 {% block content %}
 
-<h2 style="color: #ffffff;">Hello {{user}}!</h2>
+<h2 style="color: #ffffff;">Welcome, {{user}}!</h2>
 
+{%with messages = get_flashed_messages() %} {%if messages%}
+{%for message in messages%}
+<p class="error">{{message}}</p>
+{%endfor%}
+{%endif%} {%endwith%} 
 
-<table style="width: 100%; color:#ffffff;">
-    <tr>
-        <th>Name</th>
-        <th>ICAO Code</th>
-        <th>Hub Airport</th>
-        <th>Year Founded</th>
-    </tr>
-    {% for operator in operators %}
-    <tr>
-        <td><a href="/database/operators/{{operator.icao}}" style="color:#ffffff">{{operator.operator_name}}</a></td>
-        <td>{{operator.icao}}</td>
-        <td>{{operator.hub_icao}}</td>
-        <td>{{operator.year_founded}}</td>
-    </tr>
-    {% endfor %}
-</table>
-
+<!-- table of all operators in the database - not searchable due to limited size -->
+<div class="table-outer">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>ICAO Code</th>
+                    <th>Hub Airport</th>
+                    <th>Year Founded</th>
+                </tr>
+            </thead>
+            {% for operator in operators %}
+            <tr>
+                <td><a href="/database/operators/{{operator.icao}}" style="color:#ffffff">{{operator.operator_name}}</a></td>
+                <td>{{operator.icao}}</td>
+                <td>{{operator.hub_icao}}</td>
+                <td>{{operator.year_founded}}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
 
 {% endblock %} 

@@ -12,13 +12,17 @@ html {
 /* Base body styling - limits width and centres the page */
 body {
 	font-family: 'Noto Sans', sans-serif;
-	max-width: 1000px;
+	max-width: 1300px;
 	margin: 20px auto;
 	background-image: linear-gradient(to bottom, #6ca8be, #001b42);
 	background-repeat: no-repeat;
 	background-attachment: fixed;
 	text-align:center;
 	color:#ffffff;
+}
+
+.error {
+	color:rgb(255, 89, 89);
 }
  
 /* Header banner with a warm background colour */
@@ -32,11 +36,37 @@ header {
 	background-repeat: no-repeat;
 }
 
+.table-outer {
+	border-radius:10px;
+	overflow:hidden;
+	box-shadow:1.5px 2px 0px #001b42;
+	background-color:#17213f
+}
+
+.table-container {
+	max-height:800px;
+	overflow-y:auto;
+}
+
+.table-container::-webkit-scrollbar {
+	width:6px;
+}
+
+.table-container::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+	background: #434e69;
+	border-radius:10px;
+}
+
 table {
-	background-color:#17213f;
+	color:#ffffff;
+	width:100%;
+	border-spacing:0;
 	border-radius:15px;
 	padding:1%;
-	border-spacing:0;
 }
 
 /* Navigation bar below the header */
@@ -65,25 +95,32 @@ input {
 	padding: 5px;
 	border-radius: 5px;
 	border:0px;
-	margin-bottom: 4px;
+	margin-bottom: 0.5%;
 	size:100%;
 	font-size:80%;
+	box-shadow: 1.5px 2px 0px #001b42;
 }
 
 select {
 	padding: 4px;
 	border-radius: 5px;
 	border:0px;
-	margin-bottom: 4px;
 	size:100%;
 	font-size:80%;
 	margin-bottom:0.5%;
+	box-shadow: 1.5px 2px 0px #001b42;
 }
 
-.aircraftdetail td, .aircraftdetail tr {
+.aircraftdetail td {
 	padding:1%;
 	width:25%;
 	text-align:left;
+}
+
+thead {
+	position:sticky;
+	top:0;
+	z-index:2;
 }
 
 td {
@@ -102,6 +139,13 @@ tr:hover {
 th {
 	background-color:#17213f;
 	padding-bottom:1%;
+	font-size:100%;
+}
+
+tr {
+	display:table;
+	width:100%;
+	table-layout:fixed;
 }
 
 button {

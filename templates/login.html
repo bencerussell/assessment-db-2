@@ -1,9 +1,7 @@
 {% extends "layout.html" %}
 
 {% block title %}
-
 Login
-
 {% endblock %}
 
 {% block content %}
@@ -12,6 +10,7 @@ Login
 <p style="color:#fa6565">{{error}}</p>
 {% endif %}
 
+<!-- sets page title depending on action -->
 {% if create_account %}
 <h2>Create Account</h2>
 {% else %}
@@ -22,6 +21,7 @@ Login
 <p class="error">{{ error }}</p>
 {% endif %}
 
+<!-- if the user is creating an account and not logging in -->
 {% if create_account %}
 <form method="POST">
 
@@ -44,6 +44,7 @@ Login
         name = "confirm_password"
         placeholder = "Confirm Password">
     <br>
+    <!-- 'actualcreate' implies actually pressing submit on the create account form -->
     <button type="submit" name="action" value="actualcreate" style="margin-top: 3px;">
         Create Account
     </button>
@@ -51,6 +52,7 @@ Login
 
 {% else %}
 
+<!-- for if the user is logging in -->
 <form method="POST">
 
     <input
@@ -67,6 +69,7 @@ Login
         Login
     </button>
     <br>
+    <!-- offers the user to create an account -->
     <button type="submit" name="action" value="create" style="margin-top: 3px;">
         Create Account
     </button>

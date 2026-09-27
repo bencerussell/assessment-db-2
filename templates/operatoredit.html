@@ -7,33 +7,38 @@
 <img src="{{ photos[0].imageUrl }}" alt="Aircraft Photo - {{registration}}" style="width: 49%; float:right;">
 {% endif %}
 
-<table class="aircraftdetail" style="{% if photos %}width: 50%;{%else%}width:100%;{% endif %} color:#ffffff; text-align: left">
-    <tr>
-        <td><b>Name</b></td>
-        <td>{{operator.operator_name}}</td>
-    </tr>
-    <tr>
-        <td><b>Operator ICAO</b></td>
-        <td>{{operator.icao}}</td>
-    </tr>
-    <tr>
-        <td><b>Number of Aircraft</b></td>
-        <td>{{number}}</td>
-    </tr>
-    <tr>
-        <td><b>Hub Airport ICAO</b></td>
-        <td>{{operator.hub_icao}}</td>
-    </tr>
-    <tr>
-        <td><b>Year Founded</b></td>
-        <td>{{operator.year_produced}}</td>
-    </tr>
-    <tr><td colspan="2">&nbsp;</td></tr>
-    <tr>
-        <td colspan="2" style="text-align:center"><i>Added on {{ operator.date_time.strftime('%d %B %Y at %H:%M') }} {% if user == "admin" %}by {{operator.user.username}}. {% endif %}</i></td>
-    </tr>
-</table>
+<div class="table-outer" style="{% if photos %}width: 50%;{%else%}width:100%;{% endif %} margin-bottom:10px;">
+    <div class="table-container">
+        <table class="aircraftdetail">
+            <tr>
+                <td><b>Name</b></td>
+                <td>{{operator.operator_name}}</td>
+            </tr>
+            <tr>
+                <td><b>Operator ICAO</b></td>
+                <td>{{operator.icao}}</td>
+            </tr>
+            <tr>
+                <td><b>Number of Aircraft</b></td>
+                <td>{{number}}</td>
+            </tr>
+            <tr>
+                <td><b>Hub Airport ICAO</b></td>
+                <td>{{operator.hub_icao}}</td>
+            </tr>
+            <tr>
+                <td><b>Year Founded</b></td>
+                <td>{{operator.year_founded}}</td>
+            </tr>
+            <tr><td colspan="2">&nbsp;</td></tr>
+            <tr>
+                <td colspan="2" style="text-align:center"><i>Added on {{ operator.date_time.strftime('%d %B %Y at %H:%M') }} {% if user == "admin" %}by {{operator.user.username}}. {% endif %}</i></td>
+            </tr>
+        </table>
+    </div>
+</div>
 
+<!-- operator edit form in place of aircraft list -->
 <form method="POST" style="clear:both">
     <br>
     <input required

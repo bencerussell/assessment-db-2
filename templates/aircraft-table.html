@@ -1,0 +1,49 @@
+<!-- contains the table for the aircraft.html page based on the htmx request -->
+
+<table>
+    <thead>
+        <tr>
+            <th>Registration</th>
+            <th>Aircraft Type</th>
+            <th>Operator</th>
+            <th>Production Year</th>
+        </tr>
+    </thead>
+
+    <tbody id="results">
+        {% for aircraft in aircrafts %}
+
+        <!-- registration formatting-->
+        {% if aircraft.registration_prefix != "N" and aircraft.registration_prefix != "JA" and aircraft.registration_prefix != "HL" and aircraft.registration_prefix != "VP-A" and aircraft.registration_prefix!= "VP-B" and aircraft.registration_prefix != "VQ-B" %}
+        {% set registration = aircraft.registration_prefix + "-" + aircraft.registration %}
+        {% else %}
+        {% set registration = aircraft.registration_prefix + aircraft.registration %}
+        {% endif %}
+
+        <tr>
+            <td><a href="/database/aircraft/{{ aircraft.id }}" style="color:#ffffff">{{registration}}</a></td>
+            <td>{{aircraft.manufacturer.type_icao}}</td>
+            <td><a href="/database/operators/{{aircraft.operator.icao}}" style="color:#ffffff">{{aircraft.operator.operator_name}}</a></td>
+            <td>
+                {% if aircraft.year_produced %}
+                {{aircraft.year_produced}}
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- counts the total number of aircraft loaded -->
+{% set total_loaded = aircrafts|length %}
+
+<div id="result-info">
+    Showing {{ [total_loaded, total]|min }} of {{ total }} results
+</div>
+
+<!-- has the button to load more aircraft -->
+<div id="load-more">
+    {% if total_loaded < total %}
+        <button hx-get="{{ url_for('dbaircraft', q=request.args.get('q', ''), offset=total_loaded) }}" hx-target="#table-wrapper" hx-swap="innerHTML">Load 50 more</button>
+    {% endif %}
+</div>

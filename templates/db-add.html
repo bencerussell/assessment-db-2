@@ -3,6 +3,7 @@
 
 <p style="color:#ffffff">AeroBase is a community supported database. Thank you for adding your own submissions!</p>
 
+<!-- buttons to choose to add either an aircraft or an operator -->
 <form method="POST">
     <button style="margin-inline:2px" type="submit" name="action" value="aircraft">Add an Aircraft</button>
     <button style="margin-inline:2px" type="submit" name="action" value="operator">Add an Operator/Airline</button>
@@ -12,10 +13,12 @@
 <p style="color:#f00000">{{error}}</p>
 {% endif %}
 
+<!-- checks if user is adding an aircraft or an operator -->
 {% if type == 'aircraft' %}
 
 <h2>Add an Aircraft</h2>
 
+<!-- pulls reg prefixes from the fixed dataset -->
 <form method="POST">
    <select name="prefix" style="text-align: right;">
         {% for regprefix in prefixes %}
@@ -30,6 +33,7 @@
         name = "registration"
         placeholder = "Registration (e.g. 115MF)*">
 <br>
+<!-- pulls manufacturers from the fixed dataset -->
     <select name="icao" style="margin-top:0px; text-align:center;">
         {% for manufacturer in manufacturers %}
             <option value="{{ manufacturer.manufacturer_id }}">
@@ -38,6 +42,7 @@
         {% endfor %}
     </select>
     <br>
+    <!-- pulls operators from the user-added operator dataset -->
     <select name="operator_id">
         {% for operator in operators %}
             <option value="{{ operator.icao }}">
@@ -51,13 +56,14 @@
         name = "year_produced"
         placeholder = "Year of Production">
 <p style="font-size:80%; color:rgb(228, 73, 73); padding-bottom:0px"><i>Fields marked with * are required.</i></p>
+<!-- submits the aircraft specifically-->
     <button style="margin-inline:2px; margin-top:4px" type="submit" name="action" value="submit_aircraft">Submit</button>
 </form>
 
+<!-- if the user is adding an operator not an aircraft -->
 {% elif type == 'operator' %}
 
 <h2>Add an Operator</h2>
-
 <form method="POST">
    <input
         type = "text"
@@ -83,6 +89,7 @@
         name = "callsign"
         placeholder = "Operator Callsign">
 <p style="font-size:80%; color:rgb(228, 73, 73); padding-bottom:0px"><i>Fields marked with * are required.</i></p>
+<!-- submits the operator specifically-->
     <button style="margin-inline:2px; margin-top:4px" type="submit" name="action" value="submit_operator">Submit</button>
 </form>
 {% endif %}

@@ -1,12 +1,15 @@
 <nav>
   <button style="margin-inline:2px" type="button" onclick="window.location.href='/'">Home</button>
-  <button style="margin-inline:2px" type="button" onclick="window.location.href='/dashboard'">Dashboard</button>
+  <button style="margin-inline:2px" type="button" onclick="window.location.href='/dashboard'">Database</button>
   <button style="margin-inline:2px" type="button" onclick="window.location.href='/about-us'">About Us</button>
   <div class="nav-right">
+  <button type="button" onclick="history.back()" style="margin-inline:2px;">Back</button>
+  <!-- shows the admin page if the user is an admin-->
   {% if is_admin %}
-  <button style="margin-inline:2px;" style="margin-left:auto;" type="button" onclick="window.location.href='/admin'">Admin</button>
+  <button type="button" style="margin-inline:2px;" style="margin-left:auto;" type="button" onclick="window.location.href='/admin'">Admin</button>
     {% endif %}
     {% if logged_in %}
+    <!-- only shows login if the user is logged out - else shows profile-->
       <button style="margin-inline:2px;" type="button" onclick="window.location.href='/profile'">Profile</button>
     {% else %}
       <button type="button" onclick="window.location.href='/login'">Login</button>

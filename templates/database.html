@@ -1,8 +1,9 @@
 {% extends "layout.html" %}
 {% block content %}
 
-<h2 style="color: #ffffff;">Hello {{user}}!</h2>
+<h2 style="color: #ffffff;">Welcome, {{user}}!</h2>
 
+<!-- shows options to view aircraft or operators -->
 <button style="margin-inline:2px" type="button" onclick="window.location.href='/database/aircraft'">View Aircraft</button>
 <button style="margin-inline:2px" type="button" onclick="window.location.href='/database/operators'">View Operators</button>
 

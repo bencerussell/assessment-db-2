@@ -1,0 +1,65 @@
+{%extends "layout.html"%}
+{%block content%}
+
+<!-- displays any error/success msgs -->
+{%with messages = get_flashed_messages() %} {%if messages%}
+{%for message in messages%}
+<p class="error">{{message}}</p>
+{%endfor%}
+{%endif%} {%endwith%} 
+
+<!-- displays all users with the delete & checkbox -->
+<div class="table-outer">
+    <div class="table-container">
+        <table style="table-layout: fixed; width:100%; display:table;">
+            <thead>
+                <tr>
+                    <th style="width:10%;">User ID</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Contributions</th>
+                    <th style="width:10%;">Admin</th>
+                    <th></th>
+                </tr>
+            {%for user in users %}
+            <tr>
+                <td style="width:10%;">{{user.id}}</td>
+                <td>{{user.username}}</td>
+                <td>{{user.email}}</td>
+                <td>{{user.aircrafts|length + user.operators|length}}</td>
+                <!-- ensures that the 'admin' accounts's admin can't be removed -->
+                <td style="width:10%;"><input type="checkbox" {% if user.admin %}checked{% endif %} {% if user.id == 1 %}disabled{% endif %} onchange="updateAdmin({{ user.id }}, this)"></td>
+                <td><button style="background-color:rgb(119, 0, 0)"><a style="color:white; text-decoration:none;" href="/admin/user/{{user.id}}/delete">Delete</a></button></td>
+            </tr>
+            {%endfor%}
+        </table>
+    </div>
+</div>
+
+<!-- updates the admin status based on checkbox response -->
+<script>
+function updateAdmin(userId, checkbox) {
+    fetch(`/admin/user/${userId}/admin`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            admin: checkbox.checked
+        })
+    })
+    // checks if the change is successful
+    .then(response => {
+        if (!response.ok) {
+            checkbox.checked = !checkbox.checked;
+            alert("Can't change admin permissions.");
+        }
+    })
+    .catch(() => {
+        checkbox.checked = !checkbox.checked;
+        alert("Can't change admin permissions.");
+    });
+}
+</script>
+
+{%endblock%}

@@ -1,7 +1,28 @@
+<!-- home page -->
+
 {% extends "layout.html" %}
 {% block content %}
 
 <h2>{{greeting}}</h2>
-<p>Lorem Ipsum is simply dummy text of the printing and typesetting industry.</p>
 
+<!-- displays the total count of aircraft in the database -->
+<p>View the {{count}} community-added aircraft in the <a href="/database" style="color:white;">database</a>!</p>
+
+<h3>Latest Additions:</h3>
+
+<div style="display:flex; justify-content:space-between;">
+    {%for item in aircraft_data%}
+        <div style="width:33%;"><a href="/database/aircraft/{{item.aircraft.id}}"><img src="{{ item.photo.imageUrl }}" alt="Aircraft Photo - {{item.aircraft.registration_prefix}}-{{item.aircraft.registration}}" style="width: 100%; aspect-ratio:16/9; object-fit:cover;"></a>
+        
+            <!-- VVVVV ensures correct registration display VVVVV -->
+            
+            {% if item.aircraft.registration_prefix != "N" and item.aircraft.registration_prefix != "JA" and item.aircraft.registration_prefix != "HL" and item.aircraft.registration_prefix != "VP-A" and item.aircraft.registration_prefix!= "VP-B" and item.aircraft.registration_prefix != "VQ-B" %}
+            {% set registration = item.aircraft.registration_prefix + "-" + item.aircraft.registration %}
+            {% else %}
+            {% set registration = item.aircraft.registration_prefix + item.aircraft.registration %}
+            {% endif %}
+            <p>{{registration}} ({{item.aircraft.manufacturer.type_icao}})</p>
+        </div>
+    {%endfor%}
+</div>
 {% endblock %} 

@@ -3,39 +3,49 @@
 
 <h2 style="color:#ffffff">Edit Aircraft</h2>
 
+<!-- same as aircraft detail -->
 {% if photos %}
 <img src="{{ photos[0].imageUrl }}" alt="Aircraft Photo - {{aircraft.registration_prefix}}-{{aircraft.registration}}" style="width: 49%; float:right;">
 {% endif %}
 
-<table class="aircraftdetail" style="{% if photos %}width: 50%;{% endif %} color:#ffffff; text-align: left">
-    <tr>
-        <td><b>Registration</b></td>
-        <td>{{aircraft.registration_prefix}}-{{aircraft.registration}}</td>
-    </tr>
-    <tr>
-        <td><b>Aircraft Type ICAO</b></td>
-        <td>{{aircraft.manufacturer.type_icao}}/{{aircraft.manufacturer.wake_cat}}</td>
-    </tr>
-    <tr>
-        <td><b>Aircraft Type Name</b></td>
-        <td>{{aircraft.manufacturer.manufacturer_name}} {{aircraft.manufacturer.model_name}}</td>
-    </tr>
-    <tr>
-        <td><b>Operator</b></td>
-        <td>{{aircraft.operator.operator_name}}</td>
-    </tr>
-    {% if aircraft.year_produced %}
-    <tr>
-        <td><b>Production Year</b></td>
-        <td>{{aircraft.year_produced}}</td>
-    </tr>
-    {% endif %}
-    <tr><td colspan="2">&nbsp;</td></tr>
-    <tr>
-        <td colspan="2" style="text-align:center"><i>Added on {{ aircraft.date_time.strftime('%d %B %Y at %H:%M') }} by {{aircraft.user.username}}.</i></td>
-    </tr>
-</table>
+<div class="table-outer" style="{% if photos %}width: 50%;{%else%}width:100%;{% endif %} margin-bottom:10px;">
+    <div class="table-container">
+        <table class="aircraftdetail">
+            <tr>
+                <td><b>Registration</b></td>
+                <td>{{aircraft.registration_prefix}}-{{aircraft.registration}}</td>
+            </tr>
+            <tr>
+                <td><b>Country of Registration</b></td>
+                <td>{{aircraft.prefix.country_name}}</td>
+            </tr>
+            <tr>
+                <td><b>Aircraft Type ICAO</b></td>
+                <td>{{aircraft.manufacturer.type_icao}}/{{aircraft.manufacturer.wake_cat}}</td>
+            </tr>
+            <tr>
+                <td><b>Aircraft Type Name</b></td>
+                <td>{{aircraft.manufacturer.manufacturer_name}} {{aircraft.manufacturer.model_name}}</td>
+            </tr>
+            <tr>
+                <td><b>Operator</b></td>
+                <td>{{aircraft.operator.operator_name}}</td>
+            </tr>
+            {% if aircraft.year_produced %}
+            <tr>
+                <td><b>Production Year</b></td>
+                <td>{{aircraft.year_produced}}</td>
+            </tr>
+            {% endif %}
+            <tr><td colspan="2">&nbsp;</td></tr>
+            <tr>
+                <td colspan="2" style="text-align:center"><i>Modified last on {{ aircraft.date_time.strftime('%d %B %Y at %H:%M') }} by {{aircraft.user.username}}.</i></td>
+            </tr>
+        </table>
+    </div>
+</div>
 
+<!-- edit form -->
 <form method="POST" style="clear:both">
 <br>
     <select name="icao" style="margin-top:0px; text-align:center;">

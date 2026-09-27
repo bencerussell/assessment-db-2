@@ -3,63 +3,82 @@
 
 <h2 style="color: #ffffff;">{{operator.operator_name}} ({{operator.icao}})</h2>
 
+{%with messages = get_flashed_messages() %} {%if messages%}
+{%for message in messages%}
+<p class="error">{{message}}</p>
+{%endfor%}
+{%endif%} {%endwith%} 
+
+<!-- displays the random photo if one exists -->
 {% if photos %}
 <img src="{{ photos[0].imageUrl }}" alt="Aircraft Photo - {{registration}}" style="width: 49%; float:right; margin-bottom:10px;">
 {% endif %}
 
-<table class="aircraftdetail" style="{% if photos %}width: 50%;{%else%}width:100%;{% endif %} color:#ffffff; text-align: left; margin-bottom:10px;">
-    <tr>
-        <td><b>Name</b></td>
-        <td>{{operator.operator_name}}</td>
-    </tr>
-    <tr>
-        <td><b>Operator ICAO</b></td>
-        <td>{{operator.icao}}</td>
-    </tr>
-    <tr>
-        <td><b>Number of Aircraft</b></td>
-        <td>{{number}}</td>
-    </tr>
-    <tr>
-        <td><b>Hub Airport ICAO</b></td>
-        <td>{{operator.hub_icao}}</td>
-    </tr>
-    <tr>
-        <td><b>Year Founded</b></td>
-        <td>{{operator.year_founded}}</td>
-    </tr>
-    <tr><td colspan="2">&nbsp;</td></tr>
-    <tr>
-        <td colspan="2" style="text-align:center"><i>Added on {{ operator.date_time.strftime('%d %B %Y at %H:%M') }} {% if user == "admin" %}by {{operator.user.username}}. {% endif %}</i></td>
-    </tr>
-    {% if user == "admin" %}
-    <tr><td colspan="2">&nbsp;</td></tr>
-    <tr>
-        <td style="text-align:center"><a href="/database/operator/{{ operator.icao }}/edit" style="color:#ffffff" >Edit Operator</a></td>
-        <td style="text-align:center"><a href="/database/operator/{{ operator.icao }}/delete" style="color:#ffffff">Delete Operator</a></td>
-    </tr>
-    {% endif %}
-</table>
+<!-- operator details in the table -->
+<div class="table-outer" style="{% if photos %}width: 50%;{%else%}width:100%;{% endif %} margin-bottom:10px;">
+    <div class="table-container">
+        <table class="aircraftdetail">
+            <tr>
+                <td><b>Name</b></td>
+                <td>{{operator.operator_name}}</td>
+            </tr>
+            <tr>
+                <td><b>Operator ICAO</b></td>
+                <td>{{operator.icao}}</td>
+            </tr>
+            <tr>
+                <td><b>Number of Aircraft</b></td>
+                <td>{{number}}</td>
+            </tr>
+            <tr>
+                <td><b>Hub Airport ICAO</b></td>
+                <td>{{operator.hub_icao}}</td>
+            </tr>
+            <tr>
+                <td><b>Year Founded</b></td>
+                <td>{{operator.year_founded}}</td>
+            </tr>
+            <tr><td colspan="2">&nbsp;</td></tr>
+            <tr>
+                <td colspan="2" style="text-align:center"><i>Added on {{ operator.date_time.strftime('%d %B %Y at %H:%M') }} {% if user == "admin" %}by {{operator.user.username}}. {% endif %}</i></td>
+            </tr>
+            {% if user == "admin" %}
+            <tr><td colspan="2">&nbsp;</td></tr>
+            <tr>
+                <td style="text-align:center"><a href="/database/operator/{{ operator.icao }}/edit" style="color:#ffffff" >Edit Operator</a></td>
+                <td style="text-align:center"><a href="/database/operator/{{ operator.icao }}/delete" style="color:#ffffff" onclick="return confirm('Are you sure you want to delete this operator?');">Delete Operator</a></td>
+            </tr>
+            {% endif %}
+        </table>
+    </div>
+</div>
 
 {% if operator.aircrafts %}
 
-<table style="clear:both; width:50%; margin:auto;">
-    <tr>
-        <th>Registration</th>
-        <th>Aircraft Type</th>
-    </tr>
-    {% for aircraft in operator.aircrafts %}
-    {% if aircraft.registration_prefix != "N" and aircraft.registration_prefix != "JA" and aircraft.registration_prefix != "HL" and aircraft.registration_prefix != "VP-A" and aircraft.registration_prefix!= "VP-B" and aircraft.registration_prefix != "VQ-B" %}
-    {% set registration = aircraft.registration_prefix + "-" + aircraft.registration %}
-    {% else %}
-    {% set registration = aircraft.registration_prefix + aircraft.registration %}
-    {% endif %}
-    <tr>
-        <td><a href="/database/aircraft/{{aircraft.id}}" style="color:white">{{registration}}</a></td>
-        <td>{{aircraft.manufacturer.type_icao}}/{{aircraft.manufacturer.wake_cat}}</td>
-    </tr>
-    {% endfor %}
-</table>
+<!-- operator's aircrafts in a table below (only if the operator has an aircraft in the database) -->
+<div class="table-outer" style="clear:both; width:50%; margin:auto;">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Registration</th>
+                    <th>Aircraft Type</th>
+                </tr>
+            </thead>
+            {% for aircraft in operator.aircrafts %}
+            {% if aircraft.registration_prefix != "N" and aircraft.registration_prefix != "JA" and aircraft.registration_prefix != "HL" and aircraft.registration_prefix != "VP-A" and aircraft.registration_prefix!= "VP-B" and aircraft.registration_prefix != "VQ-B" %}
+            {% set registration = aircraft.registration_prefix + "-" + aircraft.registration %}
+            {% else %}
+            {% set registration = aircraft.registration_prefix + aircraft.registration %}
+            {% endif %}
+            <tr>
+                <td><a href="/database/aircraft/{{aircraft.id}}" style="color:white">{{registration}}</a></td>
+                <td>{{aircraft.manufacturer.type_icao}}/{{aircraft.manufacturer.wake_cat}}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
 
 {%endif%}
 
