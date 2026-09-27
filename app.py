@@ -242,6 +242,8 @@ def create_app():
 
             if action == "create": # action == "create" when someone selects that they want to create an account, rather than redirecting them to a new page. This reloads the page to show the create_account options on the page.
                 create_account = True 
+            if action == "loginreturn":
+                create_account = False
             elif action == "actualcreate": # action == "actualcreate" when someone actually clicks 'create account' after inputting their information.
                 create_account = True
 
