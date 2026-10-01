@@ -188,11 +188,14 @@ def create_app():
     @app.route("/")
     def home():
         aircraft_data =[]
+        offset=0
 
         aircrafts = Aircraft.query.order_by(Aircraft.id.desc()).all()
 
         for aircraft in aircrafts:
             if len(aircraft_data) >= 3: # Checks if the total aircraft (to display on the home page) is still less than 3
+                break
+            if offset >= 6:
                 break
             prefix = aircraft.registration_prefix
             if prefix not in ["N", "JA", "HL", "VP-A", "VP-B", "VQ-B"]: # Ensures correct registration formatting
@@ -201,13 +204,15 @@ def create_app():
                 registration = f"{prefix}{aircraft.registration}"
 
             try:
-                response = requests.get(APIURL, params={"registration": registration}, timeout=3) # Gets registration from jetphotos API
+                response = requests.get(APIURL, params={"registration": registration}, timeout=2) # Gets registration from jetphotos API
                 data=response.json() if response.status_code == 200 else None 
             except requests.exceptions.RequestException:
                 data=None
 
             if data and "photos" in data and len(data["photos"]) > 0:
                     aircraft_data.append({"aircraft":aircraft, "photo":data["photos"][0]}) # Adds photo & aircraft to the table if it has a photo
+
+            offset += 1
 
         count=Aircraft.query.count() # Counts number of aircraft in the database for the home screen display
 
@@ -547,7 +552,7 @@ def create_app():
             return render_template(
                 "aircraftdetail.html",
                 page_title = f"Database ({aircraft.registration_prefix}-{aircraft.registration})", # Displays the page title using an f-string to include variables
-                user=session["user"],
+                user=User.query.filter_by(username=session["user"]).first(),
                 aircraft=aircraft,
                 photos=data["photos"] if data else None
             )
@@ -679,7 +684,7 @@ def create_app():
                 page_title = f"Database ({operator.icao})",
                 operator=operator,
                 photos=photos,
-                user=session["user"],
+                user=User.query.filter_by(username=session["user"]).first(),
                 registration=f"{aircraft.registration_prefix}-{aircraft.registration}" if operator.aircrafts else None,
                 number = len(operator.aircrafts), # counts number of aircraft that the operator has
             )
