@@ -19,10 +19,15 @@ body {
 	background-attachment: fixed;
 	text-align:center;
 	color:#ffffff;
+	overflow-wrap:break-word;
 }
 
 .error {
 	color:rgb(255, 89, 89);
+}
+
+.success {
+	color:rgb(144, 255, 144);
 }
  
 /* Header banner with a warm background colour */

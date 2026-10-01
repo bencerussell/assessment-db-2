@@ -3,9 +3,10 @@
 
 <h2 style="color: #ffffff;">{{operator.operator_name}} ({{operator.icao}})</h2>
 
-{%with messages = get_flashed_messages() %} {%if messages%}
-{%for message in messages%}
-<p class="error">{{message}}</p>
+<!-- displays any error/success msgs -->
+{%with messages = get_flashed_messages(with_categories=True) %} {%if messages%}
+{%for category, message in messages%}
+<p class="{{ category }}">{{message}}</p>
 {%endfor%}
 {%endif%} {%endwith%} 
 
@@ -37,6 +38,10 @@
             <tr>
                 <td><b>Year Founded</b></td>
                 <td>{{operator.year_founded}}</td>
+            </tr>
+            <tr>
+                <td><b>Callsign</b></td>
+                <td>{{operator.callsign}}</td>
             </tr>
             <tr><td colspan="2">&nbsp;</td></tr>
             <tr>

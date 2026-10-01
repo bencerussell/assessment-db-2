@@ -2,7 +2,7 @@ from flask import Flask, render_template, abort, request, redirect, url_for, ses
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import or_
 from werkzeug.security import generate_password_hash, check_password_hash
-import csv, requests, random
+import csv, requests, random, datetime, string
 
 APIURL = "http://127.0.0.1:8787"
 
@@ -12,7 +12,7 @@ db = SQLAlchemy()
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key = True)
-    username = db.Column(db.String(20), unique = True, nullable = False)
+    username = db.Column(db.String(25), unique = True, nullable = False)
     password = db.Column(db.String(100), nullable = False)
     email = db.Column(db.String(254), nullable = False, unique = True)
     admin = db.Column(db.Boolean, default = False)
@@ -30,7 +30,7 @@ class Operator(db.Model):
     icao = db.Column(db.String(3), primary_key = True)
     hub_icao = db.Column(db.String(4), nullable = False)
     year_founded = db.Column(db.Integer, nullable = False)
-    operator_name = db.Column(db.String(25), nullable = False)
+    operator_name = db.Column(db.String(50), nullable = False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable = True)
     date_time = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now(), nullable=False)
     callsign = db.Column(db.String(50), nullable=False)
@@ -58,7 +58,7 @@ class Manufacturer(db.Model):
 
 class Aircraft(db.Model):
     id = db.Column(db.Integer, primary_key = True)
-    registration = db.Column(db.String(10), nullable = False)
+    registration = db.Column(db.String(5), nullable = False)
     year_produced = db.Column(db.Integer, nullable = True)
     operator_id = db.Column(db.String(3), db.ForeignKey("operator.icao"), nullable=False)
     registration_prefix = db.Column(db.String(5), db.ForeignKey("registration_prefix.prefix"), nullable=False)
@@ -165,8 +165,6 @@ def create_app():
 
         db.session.commit()
 
-            
-
         if not User.query.filter_by(username="admin").first(): # Creates admin account if hasn't already been done
             user = User(
                 username="admin",
@@ -182,7 +180,7 @@ def create_app():
             op2 = Operator(icao="VOZ", hub_icao="YBBN", year_founded=2000, operator_name="Virgin Australia", user_id=1, callsign="Velocity")
             op3 = Operator(icao="QFA", hub_icao="YSSY", year_founded=1920, operator_name="Qantas", user_id=1, callsign="Qantas")
             op4 = Operator(icao="BAW", hub_icao="EGLL", year_founded=1924, operator_name="British Airways", user_id=1, callsign="Speedbird")
-            op5 = Operator(icao="NIL", hub_icao="NONE", year_founded=0, operator_name="Privately Owned", user_id=1)
+            op5 = Operator(icao="NIL", hub_icao="NONE", year_founded=0, operator_name="Privately Owned", user_id=1, callsign="N/A")
 
             db.session.add_all([op5, op1, op2, op3, op4]) # Adds the 5 previously defined operators
             db.session.commit()
@@ -190,32 +188,28 @@ def create_app():
     @app.route("/")
     def home():
         aircraft_data =[]
-        offset = 0
 
-        while len(aircraft_data) < 3: # Checks if the total aircraft (to display on the home page) is still less than 3
-            aircraft = Aircraft.query.order_by(Aircraft.id.desc()).offset(offset).first()
+        aircrafts = Aircraft.query.order_by(Aircraft.id.desc()).all()
 
-            if not aircraft:
-                break # Breaks the loop if there are no aircraft in the database
-
-            prefix=aircraft.registration_prefix
+        for aircraft in aircrafts:
+            if len(aircraft_data) >= 3: # Checks if the total aircraft (to display on the home page) is still less than 3
+                break
+            prefix = aircraft.registration_prefix
             if prefix not in ["N", "JA", "HL", "VP-A", "VP-B", "VQ-B"]: # Ensures correct registration formatting
                 registration = f"{prefix}-{aircraft.registration}"
             else:
                 registration = f"{prefix}{aircraft.registration}"
-            
+
             try:
                 response = requests.get(APIURL, params={"registration": registration}, timeout=3) # Gets registration from jetphotos API
                 data=response.json() if response.status_code == 200 else None 
             except requests.exceptions.RequestException:
                 data=None
-            
+
             if data and "photos" in data and len(data["photos"]) > 0:
-                aircraft_data.append({"aircraft":aircraft, "photo":data["photos"][0]}) # Adds photo & aircraft to the table if it has a photo
+                    aircraft_data.append({"aircraft":aircraft, "photo":data["photos"][0]}) # Adds photo & aircraft to the table if it has a photo
 
-            offset += 1
-
-            count=Aircraft.query.count() # Counts number of aircraft in the database for the home screen display
+        count=Aircraft.query.count() # Counts number of aircraft in the database for the home screen display
 
         return render_template(
             "home.html",
@@ -234,7 +228,6 @@ def create_app():
     
     @app.route("/login", methods=["GET", "POST"])
     def login():
-        error = None
         create_account = False
 
         if request.method == "POST":
@@ -242,29 +235,38 @@ def create_app():
 
             if action == "create": # action == "create" when someone selects that they want to create an account, rather than redirecting them to a new page. This reloads the page to show the create_account options on the page.
                 create_account = True 
-            if action == "loginreturn":
+            elif action == "loginreturn":
                 create_account = False
             elif action == "actualcreate": # action == "actualcreate" when someone actually clicks 'create account' after inputting their information.
                 create_account = True
 
-                username = request.form["username"]
-                password = request.form["password"]
-                email = request.form["email"]
-                confirmpassword = request.form["confirm_password"]
+                username = request.form["username"].lower().strip()
+                password = request.form["password"].strip()
+                email = request.form["email"].strip()
+                confirmpassword = request.form["confirm_password"].strip()
 
-                if password != confirmpassword: # checks if passwords match
-                    error = "Passwords do not match."
-                elif User.query.filter_by(username=username).first(): # checks if username already exists
-                    error = "Username already exists."
+                if len(email) > 254: # checks email length within sql parameters
+                    flash("Email must be less than 254 characters", "error") 
+                elif email.count("@") != 1 or "." not in email.split("@")[1]: # checks email is valid
+                    flash("Email is invalid", "error")
                 elif User.query.filter_by(email=email).first(): # checks if email is already in use
-                    error = "Email already in use."
-                elif ' ' in username or ' ' in email: # checks if there are any spaces in the username or email
-                    error = "Username/email cannot have spaces."
-                elif len(username) > 20: # checks if username is too long
-                    error = "Username cannot be longer than 20 characters."
-                elif len(password) < 8 or len(password) > 100: # checks if password is too short or too long
-                    error = "Password must be between 8 and 100 characters."
-                else:
+                    flash("Email already in use", "error") 
+                elif len(username) < 3 or len(username) > 25: # checks if username length within sql parameters
+                    flash("Username must be between 3 and 25 characters", "error")
+                elif User.query.filter_by(username=username).first(): # checks if username is already in use
+                    flash("Username already in use", "error")
+                elif any(char in string.punctuation for char in username): # checks username doesnt have special character
+                    flash("Username cannot contain special characters", "error")
+                elif username.strip() != username.replace(" ", ""): # checks username doesnt have spaces
+                    flash("Username cannot contain spaces", "error")
+                elif password != confirmpassword: # checks if passwords match
+                    flash("Passwords do not match", "error")
+                elif len(password) < 8 or len(password) > 100: # checks password length
+                    flash("Password must be between 8 and 100 characters", "error")
+                elif not any(char in string.punctuation for char in password): # checks password has at least one special character
+                    flash("Password must contain at least one special character", "error")
+
+                else: # if none of the above apply
                     new_user = User(
                         username=username,
                         email=email,
@@ -274,18 +276,20 @@ def create_app():
                     db.session.add(new_user)
                     db.session.commit()
 
-                    session["user"] = username
+                    session["user"] = username # logs user in after creating account
                     
                     next_page = request.args.get("next") # If users have been redirected to login from an original page, it will redirect them to the original page
 
                     if not next_page:
                         next_page = url_for("home") # If the above is not met, users will be redirected to the home page
 
+                    flash("Account created successfully", "success")
+
                     return redirect(next_page) # Does the actual redirecting
 
             elif action == "login":
-                username = request.form["username"]
-                password = request.form["password"]
+                username = request.form["username"].lower().strip()
+                password = request.form["password"].strip()
 
                 user = User.query.filter_by(username=username).first()
 
@@ -298,12 +302,11 @@ def create_app():
 
                     return redirect(next_page)
                 else:
-                    error = "Invalid username or password."
+                    flash("Invalid username or password", "error")
 
         return render_template(
             "login.html",
             page_title = "Login",
-            error=error,
             create_account=create_account
         )
     
@@ -337,7 +340,7 @@ def create_app():
         type = None
         operators = Operator.query.order_by(Operator.operator_name).all() # Pulls a list of all operators to use in a <select> HTML function
         prefixes = RegistrationPrefix.query.order_by(RegistrationPrefix.prefix).all() # Pulls a list of all registration prefixes to use in a <select> HTML function 
-        manufacturers = Manufacturer.query.order_by(Manufacturer.manufacturer_name).all() # Pulls a list of all manufcaturers (in reality aircraft type ICAOs) to use in a <select> HTML function
+        manufacturers = Manufacturer.query.order_by(Manufacturer.manufacturer_name).all() # Pulls a list of all manufacturers (in reality aircraft type ICAOs) to use in a <select> HTML function
         if "user" in session:
             if request.method == "POST":
                 action = request.form["action"]
@@ -349,31 +352,31 @@ def create_app():
                 elif action == "operator": # if the user wants to add an operator
                     type="operator"
                 elif action == "submit_aircraft": # if the user is submitting an aircraft to the database
-                    year_produced = request.form["year_produced"]
-                    if year_produced:
-                        try:
-                            year_produced = int(request.form["year_produced"]) # tries to convert the year to a number - if this doesn't work it removes the year
-                        except ValueError:
-                            year_produced = None
+                    type = "aircraft"
+                    try:
+                        year_produced = int(request.form["year_produced"]) # tries to convert the year to a number - if this doesn't work it removes the year
+                    except ValueError:
+                        year_produced = None
 
-                    registration = request.form["registration"].upper()
+                    registration = request.form["registration"].upper().strip()
                     prefix = request.form["prefix"]
                     aircraft_icao = request.form["icao"].upper()
                     operator_id = request.form["operator_id"]
                     user_id = User.query.filter_by(username=session["user"]).first().id
                     
                     if Aircraft.query.filter_by(registration=registration, registration_prefix=prefix).first(): # restarts the process if registration already exists
-                        error = "Aircraft with this registration already exists."
-                        return render_template(
-                            "db-add.html",
-                            page_title = "Add to the Database",
-                            type=type,
-                            operators=operators,
-                            prefixes=prefixes,
-                            error=error
-                        )
-
-                    else: # adds the aircraft to the database
+                        flash("Aircraft with this registration already exists", "error")
+                    elif len(registration) > 5:
+                        flash("Registration must be less than 6 characters", "error") # ensures compliance with sql 
+                    elif any(char in string.punctuation for char in registration): # checks registration doesnt have special character
+                        flash("Registration cannot contain special characters", "error")
+                    elif year_produced is not None and year_produced > datetime.datetime.now().year:
+                        flash("Year of production cannot be in the future", "error")
+                    elif year_produced is not None and year_produced < 1903: # checks year produced isnt before the wright brothers
+                        flash("Year of production cannot be before 1903", "error")
+                    elif registration == '' or registration is None: # checks registration isnt blank
+                        flash("Registration cannot be blank", "error")
+                    else: # adds the aircraft to the database if none of the above conditions are met
                         new_aircraft = Aircraft(
                             registration=registration,
                             registration_prefix=prefix,
@@ -382,25 +385,60 @@ def create_app():
                             operator_id=operator_id,
                             user_id=user_id
                         )
+                        db.session.add(new_aircraft)
+                        db.session.commit()
 
-                    db.session.add(new_aircraft)
-                    db.session.commit()
+                        flash("Aircraft saved successfully", "success")
 
-                    return redirect(url_for("dashboard"))
+                        return redirect(url_for("aircraftdetail", aircraft_id=new_aircraft.id))
                 elif action == "submit_operator": # if the user is submitting a new operator to the database
+                    type = "operator"
                     try:
-                        year_founded = int(request.form["year"])
+                        year_founded = int(request.form["year"]) # checks if year founded is a number
                     except ValueError:
-                        return redirect(url_for("db_add")) # restarts the process if the year founded isnt a number
-                    icao = request.form["icao"].upper()
-                    hub_icao = request.form["hub"].upper()
-                    operator_name = request.form["name"].title()
+                        year_founded = None # turns year founded to nothing to use below
+                    icao = request.form["icao"].upper().strip()
+                    hub_icao = request.form["hub"].upper().strip()
+                    operator_name = request.form["name"].title().strip()
                     user_id = User.query.filter_by(username=session["user"]).first().id
-                    callsign=request.form["callsign"].title() 
+                    callsign=request.form["callsign"].title() .strip()
 
-                    if Operator.query.filter_by(icao=icao).first():
-                        error = "Operator with this ICAO code already exists."
-
+                    if len(icao) != 3: # checks icao is 3 letters
+                        flash("ICAO must be 3 characters", "error")
+                    elif Operator.query.filter_by(icao=icao).first(): # checks icao isnt duplicate
+                        flash("Operator with the same ICAO already exists", "error")
+                    elif any(char.isdigit() for char in icao): # checks icao doesnt have numbers
+                        flash("ICAO code cannot contain numbers", "error")
+                    elif any(char in string.punctuation for char in icao): # checks icao doesnt have special character
+                        flash("ICAO code cannot contain special characters", "error")
+                    elif len(hub_icao) != 4: # checks hub is 4 letters
+                        flash("Hub ICAO must be 4 characters", "error")
+                    elif any(char.isdigit() for char in hub_icao): # checks hub doesnt have numbers
+                        flash("Hub ICAO cannot contain numbers", "error")
+                    elif any(char in string.punctuation for char in hub_icao): # checks hub icao doesnt have special character
+                        flash("Hub ICAO code cannot contain special characters", "error")
+                    elif year_founded is None: # checks year founded is inputted
+                        flash("Year founded is invalid", "error") 
+                    elif year_founded > datetime.datetime.today().year: # checks year founded isnt in the future
+                        flash("Year founded cannot be in the future", "error")
+                    elif year_founded < 1909: # checks year founded isnt before the first airline
+                        flash("Year founded cannot be before 1909", "error")
+                    elif len(operator_name) > 50: # checks operator name is less than 50 characters
+                        flash("Operator name cannot be over 50 characters", "error")
+                    elif Operator.query.filter_by(operator_name=operator_name).first(): # checks operator name doesnt already exist
+                        flash("Operator with the same name already exists", "error")
+                    elif any(char in string.punctuation for char in operator_name): # checks operator name doesnt have special character
+                        flash("Operator name cannot contain special characters", "error")
+                    elif len(callsign) > 50: # checks callsign is less than 50 characters
+                        flash("Callsign must be less than 50 characters", "error")
+                    elif Operator.query.filter_by(callsign=callsign).first(): # checks that callsign doesnt already exist
+                        flash("Operator with the same callsign already exists", "error")
+                    elif any(char in string.punctuation for char in callsign): # checks callsign doesnt have special character
+                        flash("Callsign cannot contain special characters", "error")
+                    elif operator_name == '' or operator_name is None: # checks operator name isnt blank
+                        flash("Operator name cannot be blank", "error")
+                    elif callsign == '' or callsign is None: # checks callsign isnt blank
+                        flash("Callsign cannot be blank", "error")
                     else: # adds the operator to the database if success
                         new_operator = Operator(
                             icao=icao,
@@ -412,7 +450,10 @@ def create_app():
                         )
                         db.session.add(new_operator)
                         db.session.commit()
-                        return redirect(url_for("dashboard"))
+
+                        flash("Operator saved successfully", "success")
+
+                        return redirect(url_for("operatordetail", operator_id=icao))
             
             return render_template(
                 "db-add.html",
@@ -426,7 +467,7 @@ def create_app():
             return redirect(url_for("login", next=request.url)) # redirects the user if not logged in 
 
     @app.route("/database")
-    def databass():
+    def database():
         if "user" in session:
             return render_template(
                 "database.html",
@@ -464,11 +505,7 @@ def create_app():
 
         total = query.count() # total count in the search
 
-        aircraft=query.order_by(
-            Aircraft.operator_id,
-            (Aircraft.registration_prefix + "-" + Aircraft.registration),
-            Aircraft.registration
-        ).limit(offset+limit).all() # collects search results
+        aircraft=query.order_by(Aircraft.id.desc()).limit(offset+limit).all() # collects search results
 
         if request.headers.get("HX-Request"): # returns and adds aircraft to the table from a htmx request (the search bar)
             return render_template(
@@ -495,16 +532,16 @@ def create_app():
         if aircraft is None:
             abort(404) # Aborts if it cannot find the aircraft in order to prevent further errors appearing
         prefix = aircraft.registration_prefix
-        if prefix != "N" and prefix != "JA" and prefix != "HL" and prefix != "VP-A" and prefix!= "VP-B" and prefix != "VQ-B": # correct registration formatting
+        if prefix not in ["N", "JA", "HL", "VP-A", "VP-B", "VQ-B"]: # correct registration formatting
             registration = f"{aircraft.registration_prefix}-{aircraft.registration}"
         else:  
             registration = f"{aircraft.registration_prefix}{aircraft.registration}"
-        response = requests.get(
-            APIURL,
-            params={"registration":registration}
-        )
 
-        data = response.json() if response.status_code == 200 else None # ensures no photos if it cant be found
+        try:
+            response = requests.get(APIURL, params={"registration": registration}, timeout=3) # Gets registration from jetphotos API
+            data=response.json() if response.status_code == 200 else None 
+        except requests.exceptions.RequestException:
+            data=None
 
         if "user" in session:
             return render_template(
@@ -519,73 +556,88 @@ def create_app():
 
     @app.route("/database/aircraft/<aircraft_id>/delete")
     def deleteaircraft(aircraft_id):
-        if not User.query.filter_by(username=session["user"]).first() or User.query.filter_by(username=session["user"]).first().admin != True: # ensures the user is an admin
-            abort(403)
-        aircraft=Aircraft.query.get(aircraft_id)
-        if aircraft is None:
-            abort(404)
-        db.session.delete(aircraft) # deletes the aircraft
-        db.session.commit()
-        return redirect(url_for("dbaircraft"))
+        if "user" in session:
+            if not User.query.filter_by(username=session["user"]).first() or User.query.filter_by(username=session["user"]).first().admin != True: # ensures the user is an admin
+                abort(403)
+            aircraft=Aircraft.query.get(aircraft_id)
+            if aircraft is None:
+                abort(404)
+            db.session.delete(aircraft) # deletes the aircraft
+            db.session.commit()
+
+            flash("Aircraft deleted successfully", "success")
+            return redirect(url_for("dbaircraft"))
+        else:
+            return redirect(url_for("login"))
 
     @app.route("/database/aircraft/<aircraft_id>/edit", methods=["GET", "POST"])
     def editaircraft(aircraft_id):
-        if not User.query.filter_by(username=session["user"]).first() or User.query.filter_by(username=session["user"]).first().admin != True: # checks user is an admin
-            abort(403)
-        aircraft=Aircraft.query.get(aircraft_id)
-        operators = Operator.query.order_by(Operator.operator_name).all() # Pulls a list of all operators to use in a <select> HTML function
-        prefixes = RegistrationPrefix.query.order_by(RegistrationPrefix.prefix).all() # Pulls a list of all registration prefixes to use in a <select> HTML function 
-        manufacturers = Manufacturer.query.order_by(Manufacturer.type_icao).all() # Pulls a list of all manufcaturers (in reality aircraft type ICAOs) to use in a <select> HTML function
+        if "user" in session:
+            if not User.query.filter_by(username=session["user"]).first() or User.query.filter_by(username=session["user"]).first().admin != True: # checks user is an admin
+                abort(403)
+            aircraft=Aircraft.query.get(aircraft_id)
+            operators = Operator.query.order_by(Operator.operator_name).all() # Pulls a list of all operators to use in a <select> HTML function
+            prefixes = RegistrationPrefix.query.order_by(RegistrationPrefix.prefix).all() # Pulls a list of all registration prefixes to use in a <select> HTML function 
+            manufacturers = Manufacturer.query.order_by(Manufacturer.type_icao).all() # Pulls a list of all manufacturers (in reality aircraft type ICAOs) to use in a <select> HTML function
 
-        if aircraft is None:
-            abort(404)
+            if aircraft is None:
+                abort(404)
 
-        prefix = aircraft.registration_prefix
-        if prefix != "N" and prefix != "JA" and prefix != "HL" and prefix != "VP-A" and prefix!= "VP-B" and prefix != "VQ-B": # correct registration formatting
-            registration = f"{aircraft.registration_prefix}-{aircraft.registration}"
-        else:  
-            registration = f"{aircraft.registration_prefix}{aircraft.registration}"
+            prefix = aircraft.registration_prefix
+            if prefix not in ["N", "JA", "HL", "VP-A", "VP-B", "VQ-B"]: # correct registration formatting
+                registration = f"{aircraft.registration_prefix}-{aircraft.registration}"
+            else:  
+                registration = f"{aircraft.registration_prefix}{aircraft.registration}"
 
-        response = requests.get(
-            APIURL,
-            params={"registration": registration}
-        )
+            try:
+                response = requests.get(APIURL, params={"registration": registration}, timeout=3) # Gets registration from jetphotos API
+                data=response.json() if response.status_code == 200 else None 
+            except requests.exceptions.RequestException:
+                data=None
 
-        data = response.json() if response.status_code == 200 else None
+            if request.method == "POST":
+                action = request.form["action"]
 
-        if request.method == "POST":
-            action = request.form["action"]
-
-            if action == "saveedit": # checks when the admin has saved the aircraft's edits
-                year_produced = request.form["year_produced"]
-                if year_produced:
+                if action == "saveedit": # checks when the admin has saved the aircraft's edits
                     try:
                         year_produced = int(request.form["year_produced"])
                     except ValueError:
                         year_produced = None
-                aircraft_icao = request.form["icao"].upper()
-                operator_id = request.form["operator_id"]
 
-                aircraft.manufacturer_id = aircraft_icao
-                aircraft.operator_id = operator_id
-                aircraft.year_produced = year_produced
-                db.session.commit() # saves the edits to the database
+                    aircraft_icao = request.form["icao"].upper().strip()
+                    operator_id = request.form["operator_id"].strip()
+                    user_id = User.query.filter_by(username=session["user"]).first().id
 
-                return redirect(url_for("aircraftdetail", aircraft_id=aircraft_id))
+                    if year_produced is not None and year_produced > datetime.datetime.now().year:
+                        flash("Year of production cannot be in the future", "error")
+                    elif year_produced is not None and year_produced < 1903: # checks year produced isnt before the wright brothers
+                        flash("Year of production cannot be before 1903", "error")
+                    else:
+                        aircraft.manufacturer_id = aircraft_icao
+                        aircraft.operator_id = operator_id
+                        aircraft.year_produced = year_produced
+                        aircraft.user_id = user_id
+                        db.session.commit() # saves the edits to the database
 
-        return render_template(
-            "aircraftedit.html",
-            page_title=f"Edit ({aircraft.registration_prefix}-{aircraft.registration})",
-            aircraft=aircraft,
-            operators=operators,
-            manufacturers=manufacturers,
-            photos=data["photos"] if data else None
-        )
+                        flash("Aircraft saved successfully", "success")
+
+                        return redirect(url_for("aircraftdetail", aircraft_id=aircraft_id))
+
+            return render_template(
+                "aircraftedit.html",
+                page_title=f"Edit ({aircraft.registration_prefix}-{aircraft.registration})",
+                aircraft=aircraft,
+                operators=operators,
+                manufacturers=manufacturers,
+                photos=data["photos"] if data else None
+            )
+        else:
+            return redirect(url_for("login"))
 
 
     @app.route("/database/operators")
     def dboperator():
-        operators = Operator.query.order_by(Operator.operator_name).all() # collects all oeprators to display in the table
+        operators = Operator.query.order_by(Operator.operator_name).all() # collects all operators to display in the table
         if "user" in session:
             return render_template(
                 "operators.html",
@@ -598,101 +650,150 @@ def create_app():
 
     @app.route("/database/operators/<operator_id>")
     def operatordetail(operator_id):
-        operator=Operator.query.get(operator_id)
-        data = None
-        if operator is None:
-            abort(404)
+        if "user" in session:
+            operator=Operator.query.get(operator_id)
+            data = None
+            if operator is None:
+                abort(404)
 
-        if not operator.aircrafts: 
-            photo = None
-        else:
-            aircraft = random.choice(operator.aircrafts) # picks a random aircraft from the operator to display a photo of
-            prefix = aircraft.registration_prefix
-            if prefix != "N" and prefix != "JA" and prefix != "HL" and prefix != "VP-A" and prefix!= "VP-B" and prefix != "VQ-B": # correct registration formatting
-                    registration = f"{aircraft.registration_prefix}-{aircraft.registration}"
-            else:  
-                registration = f"{aircraft.registration_prefix}{aircraft.registration}"
-            response = requests.get(
-                APIURL,
-                params={"registration": registration}
+            if operator.aircrafts:
+                aircraft = random.choice(operator.aircrafts) # picks a random aircraft from the operator to display a photo of
+                prefix = aircraft.registration_prefix
+                if prefix not in ["N", "JA", "HL", "VP-A", "VP-B", "VQ-B"]: # correct registration formatting
+                        registration = f"{aircraft.registration_prefix}-{aircraft.registration}"
+                else:  
+                    registration = f"{aircraft.registration_prefix}{aircraft.registration}"
+                try:
+                    response = requests.get(APIURL, params={"registration": registration}, timeout=3) # Gets registration from jetphotos API
+                    data=response.json() if response.status_code == 200 else None 
+                except requests.exceptions.RequestException:
+                    data=None
+
+            if data != None:
+                photos=data["photos"]
+            else:
+                photos=None
+
+            return render_template(
+                "operatordetail.html",
+                page_title = f"Database ({operator.icao})",
+                operator=operator,
+                photos=photos,
+                user=session["user"],
+                registration=f"{aircraft.registration_prefix}-{aircraft.registration}" if operator.aircrafts else None,
+                number = len(operator.aircrafts), # counts number of aircraft that the operator has
             )
-
-            data = response.json() if response.status_code == 200 else None
-
-        if data != None:
-            photos=data["photos"]
         else:
-            photos=None
+            return redirect(url_for("login"))
 
-        error=request.args.get("error")
+    @app.route("/database/operators/<operator_id>/edit", methods=["GET", "POST"])
+    def operatoredit(operator_id):
+        if "user" in session:
+            if not User.query.filter_by(username=session["user"]).first() or User.query.filter_by(username=session["user"]).first().admin != True: # checks user is an admin
+                abort(403)
+            if operator_id == "NIL": # can't delete privately owned
+                abort(403)
+            operator=Operator.query.get(operator_id)
+            data = None
+            if operator is None: # checks the operator actually exists
+                abort(404)
 
-        return render_template(
-            "operatordetail.html",
-            page_title = f"Database ({operator.icao})",
-            operator=operator,
-            photos=photos,
-            user=session["user"],
-            registration=f"{aircraft.registration_prefix}-{aircraft.registration}" if operator.aircrafts else None,
-            number = len(operator.aircrafts), # counts number of aircraft that the operator has
-        )
+            if not operator.aircrafts:
+                photo = None
+            else:
+                aircraft = random.choice(operator.aircrafts) # displays random photo from the operator
+                prefix = aircraft.registration_prefix
+                if prefix not in ["N", "JA", "HL", "VP-A", "VP-B", "VQ-B"]: # correct registration formatting
+                        registration = f"{aircraft.registration_prefix}-{aircraft.registration}"
+                else:  
+                    registration = f"{aircraft.registration_prefix}{aircraft.registration}"
+                try:
+                    response = requests.get(APIURL, params={"registration": registration}, timeout=3) # Gets registration from jetphotos API
+                    data=response.json() if response.status_code == 200 else None 
+                except requests.exceptions.RequestException:
+                    data=None
 
-    @app.route("/database/operator/<operator_id>/edit", methods=["GET", "POST"])
-    def editoperator(operator_id):
-        if not User.query.filter_by(username=session["user"]).first() or User.query.filter_by(username=session["user"]).first().admin != True: # checks user is an admin
-            abort(403)
-        if operator_id == "NIL": # can't delete privately owned
-            abort(403)
-        operator=Operator.query.get(operator_id)
-        data = None
-        if operator is None: # checks the operator actually exists
-            abort(404)
+            if data != None:
+                photos=data["photos"]
+            else:
+                photos=None
 
-        if not operator.aircrafts:
-            photo = None
-        else:
-            aircraft = random.choice(operator.aircrafts) # displays random photo from the operator
-            prefix = aircraft.registration_prefix
-            if prefix != "N" and prefix != "JA" and prefix != "HL" and prefix != "VP-A" and prefix!= "VP-B" and prefix != "VQ-B": # correct registration formatting
-                    registration = f"{aircraft.registration_prefix}-{aircraft.registration}"
-            else:  
-                registration = f"{aircraft.registration_prefix}{aircraft.registration}"
-            response = requests.get(
-                APIURL,
-                params={"registration": registration}
+            if request.method == "POST":
+                action = request.form["action"]
+
+                if action == "saveoperator": # checks when the admin has saved the operator's edits
+                    try:
+                        year_founded = int(request.form["year"])
+                    except ValueError:
+                        year_founded = None
+                    hub_icao = request.form["hub"].upper().strip()
+                    operator_name = request.form["name"].title().strip()
+                    callsign=request.form["callsign"].title().strip()
+
+                    if len(hub_icao) != 4: # checks hub is 4 letters
+                        flash("Hub ICAO must be 4 characters", "error")
+                    elif any(char.isdigit() for char in hub_icao): # checks hub doesnt have numbers
+                        flash("Hub ICAO cannot contain numbers", "error")
+                    elif any(char in string.punctuation for char in hub_icao): # checks hub icao doesnt have special character
+                        flash("Hub ICAO code cannot contain special characters", "error")
+                    elif year_founded is None: # checks if year has been made an integer
+                        flash("Year founded is invalid", "error")
+                    elif year_founded > datetime.datetime.today().year: # checks year founded isnt in the future
+                        flash("Year founded cannot be in the future", "error")
+                    elif year_founded < 1909: # checks year founded isnt before the first airline
+                        flash("Year founded cannot be before 1909", "error")
+                    elif len(operator_name) > 50: # checks operator name is less than 50 characters
+                        flash("Operator name cannot be over 50 characters", "error")
+                    elif any(char in string.punctuation for char in operator_name): # checks operator name doesnt have special character
+                        flash("Operator name cannot contain special characters", "error")
+                    elif len(callsign) > 50: # checks callsign is less than 50 characters
+                        flash("Callsign must be less than 50 characters", "error")
+                    elif any(char in string.punctuation for char in callsign): # checks callsign doesnt have special character
+                        flash("Callsign cannot contain special characters", "error")
+                    elif operator_name == '' or operator_name is None: # checks operator name isnt blank
+                        flash("Operator name cannot be blank", "error")
+                    elif callsign == '' or callsign is None: # checks callsign isnt blank
+                        flash("Callsign cannot be blank", "error")
+                    else:
+                        operator.hub_icao = hub_icao
+                        operator.year_founded = year_founded
+                        operator.operator_name = operator_name
+                        operator.callsign=callsign
+                        db.session.commit() # saves the edits to the database
+
+                        flash("Operator saved successfully", "success")
+
+                        return redirect(url_for("operatordetail", operator_id=operator_id))
+
+            return render_template(
+                "operatoredit.html",
+                page_title = f"Edit ({operator.icao})",
+                operator=operator,
+                photos=photos,
+                user=session["user"],
+                registration=f"{aircraft.registration_prefix}-{aircraft.registration}" if operator.aircrafts else None,
+                number = len(operator.aircrafts)
             )
-
-            data = response.json() if response.status_code == 200 else None
-
-        if data != None:
-            photos=data["photos"]
         else:
-            photos=None
+            return redirect(url_for("login"))
 
-        return render_template(
-            "operatoredit.html",
-            page_title = f"Edit ({operator.icao})",
-            operator=operator,
-            photos=photos,
-            user=session["user"],
-            registration=f"{aircraft.registration_prefix}-{aircraft.registration}" if operator.aircrafts else None,
-            number = len(operator.aircrafts)
-        )
-
-    @app.route("/database/operator/<operator_id>/delete")
+    @app.route("/database/operators/<operator_id>/delete")
     def deleteoperator(operator_id):
-        error = None
-        if not User.query.filter_by(username=session["user"]).first() or User.query.filter_by(username=session["user"]).first().admin != True: # checks user is an admin
-            abort(403)
-        operator=Operator.query.get(operator_id)
-        if operator is None:
-            abort(404)
-        if aircraft := Aircraft.query.filter_by(operator_id=operator.icao).first(): # checks operator doesnt have any aircraft belonging to it
-            flash("Cannot delete operator with associated aircraft.", "error")
-            return redirect(url_for("operatordetail", operator_id=operator_id))
-        db.session.delete(operator)
-        db.session.commit()
-        flash("Operator deleted successfully!") # confirms the operator has been deleted
-        return redirect(url_for("dboperator"))
+        if "user" in session:
+            if not User.query.filter_by(username=session["user"]).first() or User.query.filter_by(username=session["user"]).first().admin != True: # checks user is an admin
+                abort(403)
+            operator=Operator.query.get(operator_id)
+            if operator is None:
+                abort(404)
+            if aircraft := Aircraft.query.filter_by(operator_id=operator.icao).first(): # checks operator doesnt have any aircraft belonging to it
+                flash("Cannot delete operator with associated aircraft.", "error")
+                return redirect(url_for("operatordetail", operator_id=operator_id))
+            db.session.delete(operator)
+            db.session.commit()
+            flash("Operator deleted successfully", "success") # confirms the operator has been deleted
+            return redirect(url_for("dboperator"))
+        else:
+            return redirect(url_for("login"))
     
     @app.route("/logout")
     def logout():
@@ -701,40 +802,49 @@ def create_app():
 
     @app.route("/admin")
     def admin():
-        if not User.query.filter_by(username=session["user"]).first() or User.query.filter_by(username=session["user"]).first().admin != True: # checks user is an admin
-            abort(403)
-        users = User.query.order_by(User.id) # pulls all users
+        if "user" in session:
+            if not User.query.filter_by(username=session["user"]).first() or User.query.filter_by(username=session["user"]).first().admin != True: # checks user is an admin
+                abort(403)
+            users = User.query.order_by(User.id) # pulls all users
 
-        return render_template(
-            "admin.html",
-            page_title = "Admin",
-            users=users
-        )
+            return render_template(
+                "admin.html",
+                page_title = "Admin",
+                users=users
+            )
+        else:
+            return redirect(url_for("login")) 
     
     @app.route("/admin/user/<int:user_id>/admin", methods=["POST"])
     def update_admin(user_id): # updates the 'admin' field for a user based on the checkbox on the admin page
-        current_user = User.query.filter_by(username=session["user"]).first()
-        if not current_user or not current_user.admin:
-            abort(403)
-        user = User.query.get_or_404(user_id)
-        data = request.get_json()
-        user.admin = data["admin"]
-        db.session.commit()
-        return "", 204
+        if "user" in session:
+            current_user = User.query.filter_by(username=session["user"]).first()
+            if not current_user or not current_user.admin:
+                abort(403)
+            user = User.query.get_or_404(user_id)
+            data = request.get_json()
+            user.admin = data["admin"]
+            db.session.commit()
+            return "", 204
+        else:
+            return redirect(url_for("login"))
 
     @app.route("/admin/user/<int:user_id>/delete")
     def delete_user(user_id):
-        current_user = User.query.filter_by(username=session["user"]).first()
-        if not current_user or not current_user.admin:
-            abort(403)
-        user = User.query.get_or_404(user_id)
-        if not user.admin:
-            db.session.delete(user) # deletes target user
-            db.session.commit()
-            flash("User deleted!")
+        if "user" in session:
+            current_user = User.query.filter_by(username=session["user"]).first()
+            if not current_user or not current_user.admin:
+                abort(403)
+            user = User.query.get_or_404(user_id)
+            if not user.admin:
+                db.session.delete(user) # deletes target user
+                db.session.commit()
+                flash("User deleted successfully", "success")
+            else:
+                flash("User is an admin and cannot be deleted", "error")
+            return redirect(url_for("admin"))
         else:
-            flash("User is an admin and cannot be deleted.")
-        return redirect(url_for("admin"))
+            return redirect(url_for("login"))
         
     return app
         

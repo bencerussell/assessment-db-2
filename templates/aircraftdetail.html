@@ -2,9 +2,13 @@
 {% block content %}
 
 <h2 style="color: #ffffff;">{{aircraft.registration_prefix}}-{{aircraft.registration}}</h2>
-{% if error %}
-<p class="error">{{ error }}</p>
-{%endif%}
+
+<!-- displays any error/success msgs -->
+{%with messages = get_flashed_messages(with_categories=True) %} {%if messages%}
+{%for category, message in messages%}
+<p class="{{ category }}">{{message}}</p>
+{%endfor%}
+{%endif%} {%endwith%} 
 
 <!-- displays a photo only if one is provided -->
 {% if photos %}

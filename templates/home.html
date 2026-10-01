@@ -5,9 +5,17 @@
 
 <h2>{{greeting}}</h2>
 
+<!-- displays any error/success msgs -->
+{%with messages = get_flashed_messages(with_categories=True) %} {%if messages%}
+{%for category, message in messages%}
+<p class="{{ category }}">{{message}}</p>
+{%endfor%}
+{%endif%} {%endwith%} 
+
 <!-- displays the total count of aircraft in the database -->
 <p>View the {{count}} community-added aircraft in the <a href="/database" style="color:white;">database</a>!</p>
 
+{% if aircraft_data %}
 <h3>Latest Additions:</h3>
 
 <div style="display:flex; justify-content:space-between;">
@@ -25,4 +33,5 @@
         </div>
     {%endfor%}
 </div>
+{% endif %}
 {% endblock %} 
